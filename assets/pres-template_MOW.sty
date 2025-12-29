@@ -1,0 +1,370 @@
+%\documentclass[pdf, xcolor={dvipsnames}]{beamer}
+%\documentclass[notes=only, xcolor={dvipsnames}]{beamer}
+%\documentclass[notes, xcolor={dvipsnames}]{beamer}
+
+% --- Beamer settings --------------------------------------------------------
+\mode<presentation>{\usetheme{default}}
+%\setbeamertemplate{note page}[infolines]
+
+% --- Color scheme -----------------------------------------------------------
+\RequirePackage{xcolor,hyperref,url}
+
+\definecolor{Maroon}{RGB}{128, 0, 0}
+\usecolortheme[named=Maroon]{structure}
+\definecolor{Contrast1}{RGB}{248,164,41} % Yellow
+\definecolor{Contrast1l}{RGB}{249,182,78} % Yellow light
+\definecolor{Contrast1d}{RGB}{198,130,32} % Yellow dark
+
+\definecolor{Contrast2}{RGB}{193,102,34} % Orange
+\definecolor{Contrast2l}{RGB}{211,147,99} % Orange light
+\definecolor{Contrast2d}{RGB}{154, 83,36} % Orange dark
+
+\definecolor{Contrast3}{RGB}{153,57,49} % Red
+\definecolor{Contrast3l}{RGB}{186,123,118} % Red light
+\definecolor{Contrast3d}{RGB}{109,50,39} % Red dark
+
+\definecolor{Contrast4}{RGB}{145,171,90} % Green
+\definecolor{Contrast4l}{RGB}{174,177,126} % Green light
+\definecolor{Contrast4d}{RGB}{101,109,51} % Green dark
+
+\definecolor{Contrast5}{RGB}{88,89,63} % Dark green
+\definecolor{Contrast5l}{RGB}{140,144,127} % Dark green light
+\definecolor{Contrast5d}{RGB}{70,72,51} % Dark green dark
+
+\definecolor{Contrast6}{RGB}{21,95,131} % Blue
+\definecolor{Contrast6l}{RGB}{91,150,173} % Blue light
+\definecolor{Contrast6d}{RGB}{21,67,95} % Blue dark
+
+\definecolor{Contrast7}{RGB}{53,14,32} % Violet
+\definecolor{Contrast7l}{RGB}{114,86,99} % Violet light
+
+\definecolor{Violator1}{RGB}{44,170,226} % Cyan
+\definecolor{Violator2}{RGB}{236,0,140} % Magenta
+
+\hypersetup{
+colorlinks=true,
+urlcolor=Contrast1,
+citecolor=Contrast1,
+linkcolor=Contrast1
+}
+
+\newenvironment{transitionframe}{
+  \setbeamercolor{background canvas}{bg=Maroon}
+  \begin{frame}[c]}{
+    \end{frame}
+}
+
+% --- Typography -------------------------------------------------------------
+\usepackage[default]{lato}
+
+% --- Environments -----------------------------------------------------------
+\newenvironment{wideitemize}{\itemize\addtolength{\itemsep}{10pt}}{\enditemize}
+
+% --- Beamer templates -------------------------------------------------------
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{%
+\hfill\usebeamertemplate***{navigation symbols}
+\hspace{1cm}\insertframenumber{}}
+\setbeamertemplate{itemize items}{-}
+%\setbeamercolor{frametitle}{fg=Maroon}
+%\setbeamercolor{title}{fg=Maroon}
+%\setbeamercolor{itemize item}{fg=Maroon}
+%\setbeamercolor{itemize subitem}{fg=Maroon}
+%\setbeamercolor{enumerate item}{fg=Maroon}
+%\setbeamercolor{enumerate subitem}{fg=Maroon}
+%\setbeamercolor{button}{bg=MyBackground,fg=Maroon,}
+
+% --- Boxes around results (TikZ) -------------------------------------------
+\RequirePackage{tikz}
+\usetikzlibrary{matrix,shapes,arrows,fit,tikzmark}
+
+\tikzset{
+        every picture/.style={remember picture,baseline},
+        every node/.style={anchor=base,align=center,outer sep=1.5pt},
+        every path/.style={thick},
+        }
+
+\newcommand\marktopleft[1]{%
+    \tikz[overlay,remember picture]
+        \node (marker-#1-a) at (-.3em,.2em) {};%
+}
+\newcommand\markbottomright[1]{%
+    \tikz[overlay,remember picture]
+        \node (marker-#1-b) at (.1em,.3em) {};%
+    \tikz[overlay,remember picture,inner sep=1pt]
+        \node[draw=red,fit=(marker-#1-a.north west) (marker-#1-b.south east)] {};%
+}
+
+% --- General packages -------------------------------------------------------
+\RequirePackage[utf8]{inputenc}
+\RequirePackage{amsmath,amssymb,amsfonts}
+\RequirePackage{amsthm}
+\RequirePackage{bbm}
+\RequirePackage{array}
+\RequirePackage{calc}
+\RequirePackage{dcolumn}
+\RequirePackage{graphicx}
+\RequirePackage[round]{natbib}
+\RequirePackage[normalem]{ulem}
+\RequirePackage{siunitx}
+\RequirePackage{graphicx}
+\RequirePackage{epsfig}
+\RequirePackage{psfrag}
+\RequirePackage{wrapfig}
+\RequirePackage[all]{xy}
+\RequirePackage{multirow}
+\RequirePackage{rotating}
+\RequirePackage{framed} % allow frames for instructions
+\RequirePackage{adjustbox} % allow centering of images
+\RequirePackage{subcaption}
+\RequirePackage{multicol} % multiple columns
+\setlength{\columnsep}{0.25cm}
+
+% --- Math boldface shortcuts ------------------------------------------------
+\def\Var{{\textrm{Var}}\,}
+\def\V{{\textrm V}\,}
+\def\E{{\textrm E}\,}
+\def\arg{{\textrm {arg} }\,}
+\def\Cov{{\textrm{Cov} }\,}
+\def\Cor{{\textrm{Cor} }\,}
+\def\N{{\textrm N}\,}
+\def\Supp{{\textrm {Supp} }\,}
+\DeclareMathOperator*{\argmin}{\arg\!\min}
+\DeclareMathOperator*{\argmax}{\textrm{arg}\,\textrm{max}}
+
+\newcommand{\A}{\mathbf{A}}\newcommand{\B}{\mathbf{B}}\newcommand{\C}{\mathbf{C}}
+\newcommand{\D}{\mathbf{D}}\newcommand{\F}{\mathbf{F}}\newcommand{\G}{\mathbf{G}}
+\newcommand{\HB}{\mathbf{H}}\newcommand{\I}{\mathbf{I}}\newcommand{\J}{\mathbf{J}}
+\newcommand{\K}{\mathbf{K}}\newcommand{\Lb}{\mathbf{L}}\newcommand{\M}{\mathbf{M}}
+\newcommand{\NB}{\mathbf{N}}\newcommand{\OB}{\mathbf{O}}\newcommand{\PB}{\mathbf{P}}
+\newcommand{\Q}{\mathbf{Q}}\newcommand{\R}{\mathbf{R}}\newcommand{\SB}{\mathbf{S}}
+\newcommand{\T}{\mathbf{T}}\newcommand{\U}{\mathbf{U}}\newcommand{\VB}{\mathbf{V}}
+\newcommand{\W}{\mathbf{W}}\newcommand{\X}{\mathbf{X}}\newcommand{\Y}{\mathbf{Y}}
+\newcommand{\Z}{\mathbf{Z}}
+
+\newcommand{\aB}{\mathbf{a}}\newcommand{\bB}{\mathbf{b}}\newcommand{\cB}{\mathbf{c}}
+\newcommand{\dB}{\mathbf{d}}\newcommand{\e}{\mathbf{e}}\newcommand{\f}{\mathbf{f}}
+\newcommand{\g}{\mathbf{g}}\newcommand{\h}{\mathbf{h}}\newcommand{\iB}{\mathbf{i}}
+\newcommand{\jB}{\mathbf{j}}\newcommand{\kB}{\mathbf{k}}\newcommand{\lB}{\mathbf{l}}
+\newcommand{\m}{\mathbf{m}}\newcommand{\n}{\mathbf{n}}\newcommand{\oB}{\mathbf{o}}
+\newcommand{\p}{\mathbf{p}}\newcommand{\q}{\mathbf{q}}\newcommand{\rB}{\mathbf{r}}
+\newcommand{\s}{\mathbf{s}}\newcommand{\tB}{\mathbf{t}}\newcommand{\uB}{\mathbf{u}}
+\newcommand{\vB}{\mathbf{v}}\newcommand{\w}{\mathbf{w}}\newcommand{\x}{\mathbf{x}}
+\newcommand{\y}{\mathbf{y}}\newcommand{\z}{\mathbf{z}}
+
+\def\AA{{\mathbb A}}\def\BB{{\mathbb B}}\def\CC{{\mathbb C}}
+\def\DD{{\mathbb D}}\def\EE{{\mathbb E}}\def\FF{{\mathbb F}}
+\def\GG{{\mathbb G}}\def\HH{{\mathbb H}}\def\II{{\mathbb I}}
+\def\JJ{{\mathbb J}}\def\KK{{\mathbb K}}\def\LL{{\mathbb L}}
+\def\MM{{\mathbb M}}\def\NN{{\mathbb N}}\def\OO{{\mathbb O}}
+\def\PP{{\mathbb P}}\def\QQ{{\mathbb Q}}\def\RR{{\mathbb R}}
+\def\SS{{\mathbb S}}\def\TT{{\mathbb T}}\def\UU{{\mathbb U}}
+\def\VV{{\mathbb V}}\def\WW{{\mathbb W}}\def\XX{{\mathbb X}}
+\def\YY{{\mathbb Y}}\def\ZZ{{\mathbb Z}}
+
+\RequirePackage{euscript}
+\let\muchmore= \gg
+\let\muchless= \ll
+\let\typewriter=\tt  % for turning on the typewriter font
+\def\aa{{\EuScript A}}\def\bb{{\EuScript B}}\def\cc{{\EuScript C}}\def\dd{{\EuScript D}}
+\def\ee{{\EuScript E}}\def\ff{{\EuScript F}}\def\gg{{\EuScript G}}\def\hh{{\EuScript H}}
+\def\ii{{\EuScript I}}\def\jj{{\EuScript J}}\def\kk{{\EuScript K}}\def\ll{{\EuScript L}}
+\def\mm{{\EuScript M}}\def\nn{{\EuScript N}}\def\oo{{\EuScript O}}\def\pp{{\EuScript P}}
+\def\qq{{\EuScript Q}}\def\rr{{\EuScript R}}\def\ss{{\EuScript S}}\def\tt{{\EuScript T}}
+\def\uu{{\EuScript U}}\def\vv{{\EuScript V}}\def\ww{{\EuScript W}}\def\xx{{\EuScript X}}
+\def\yy{{\EuScript Y}}\def\zz{{\EuScript Z}}
+
+\newcommand{\Beta}{\boldsymbol{\beta}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\bgamma}{\boldsymbol{\gamma}}
+\newcommand{\bpi}{\boldsymbol{\pi}}
+\newcommand{\arrowp}{\stackrel{p}{\rightarrow}}
+\newcommand{\0}{\mathbf{0}}
+\newcommand{\bP}{\mathbf{P}}
+
+\newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}
+\def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
+
+\newcommand{\indep}{\perp\!\!\!\!\perp}
+
+% --- Backup slide counter ---------------------------------------------------
+\newcommand{\backupbegin}{
+   \newcounter{finalframe}
+   \setcounter{finalframe}{\value{framenumber}}
+}
+\newcommand{\backupend}{
+   \setcounter{framenumber}{\value{finalframe}}
+}
+
+% --- Enumerate lists in notes ----------------------------------------------
+\makeatletter
+\def\beamer@setupnote{%
+  \gdef\beamer@notesactions{%
+    \beamer@outsideframenote{%
+      \beamer@atbeginnote%
+      \beamer@notes%
+      \ifx\beamer@noteitems\@empty\else
+      \begin{itemize}\itemsep=0pt\parskip=0pt%
+        \beamer@noteitems%
+      \end{itemize}%
+      \fi%
+      \beamer@atendnote%
+    }%
+    \gdef\beamer@notesactions{}%
+  }
+}
+
+% --- Notes page template ----------------------------------------------------
+\RequirePackage{pgfpages}
+
+\makeatletter
+\defbeamertemplate{note page}{infolines}
+{%
+    {%
+        \scriptsize
+        \insertvrule{.25\paperheight}{white!90!black}
+        \vskip-.25\paperheight
+        \nointerlineskip
+        \vbox{
+            \hfill\insertslideintonotes{0.25}\hskip-\Gm@rmargin\hskip0pt%
+            \vskip-0.25\paperheight%
+            \nointerlineskip
+            \begin{pgfpicture}{0cm}{0cm}{0cm}{0cm}
+                \begin{pgflowlevelscope}{\pgftransformrotate{90}}
+                    {\pgftransformshift{\pgfpoint{-2cm}{0.2cm}}%
+                        \pgftext[base,left]{\footnotesize\the\year-\ifnum\month<10\relax0\fi\the\month-\ifnum\day<10\relax0\fi\the\day}}
+                \end{pgflowlevelscope}
+            \end{pgfpicture}}
+            \nointerlineskip
+            \vbox to .25\paperheight{\vskip0.5em
+                \hbox{\insertshorttitle[width=8cm]}%
+                \setbox\beamer@tempbox=\hbox{\insertsection}%
+                \hbox{\ifdim\wd\beamer@tempbox>1pt{\hskip4pt\raise3pt\hbox{\vrule
+                            width0.4pt height7pt\vrule width 9pt
+                            height0.4pt}}\hskip1pt\hbox{\begin{minipage}[t]{7.5cm}\def\breakhere{}\insertsection\end{minipage}}\fi%
+                }%
+                \setbox\beamer@tempbox=\hbox{\insertsubsection}%
+                \hbox{\ifdim\wd\beamer@tempbox>1pt{\hskip17.4pt\raise3pt\hbox{\vrule
+                            width0.4pt height7pt\vrule width 9pt
+                            height0.4pt}}\hskip1pt\hbox{\begin{minipage}[t]{7.5cm}\def\breakhere{}\insertsubsection\end{minipage}}\fi%
+                }%
+                \setbox\beamer@tempbox=\hbox{\insertshortframetitle}%
+                \hbox{\ifdim\wd\beamer@tempbox>1pt{\hskip30.8pt\raise3pt\hbox{\vrule
+                            width0.4pt height7pt\vrule width 9pt
+                            height0.4pt}}\hskip1pt\hbox{\insertshortframetitle[width=7cm]}\fi%
+                }%
+                \vfil}%
+        }%
+        \vskip.25em
+        \nointerlineskip
+        \begin{minipage}{\textwidth} % this is an addition
+            \insertnote
+        \end{minipage}               % this is an addition
+    }
+    \makeatother
+
+    \setbeamertemplate{note page}[infolines]
+ \setbeamersize{text margin left=5mm,text margin right=5mm}
+
+ %% don't work? It also requires to add manually every cite variant.
+\let\beameroldcite=\cite
+\renewcommand\cite[1]{\hyperlink{#1}{\beameroldcite{#1}}}
+\let\beameroldcitet=\citet
+\renewcommand\citet[1]{\hyperlink{#1}{\beameroldcitet{#1}}}
+\newcommand\citetfull[1]{\hyperlink{#1}{\beameroldcitet*{#1}}}
+\let\beameroldcitep=\citep
+\renewcommand\citep[1]{\hyperlink{#1}{\beameroldcitep{#1}}}
+\newcommand\citepfull[1]{\hyperlink{#1}{\beameroldcitep*{#1}}}
+\let\beameroldciteyear=\citeyear
+\renewcommand\citeyear[1]{\hyperlink{#1}{\beameroldciteyear{#1}}}
+\let\beameroldciteauthor=\citeauthor
+\renewcommand\citeauthor[1]{\hyperlink{#1}{\beameroldciteauthor{#1}}}
+\let\beameroldcitepalias=\citepalias
+\renewcommand\citepalias[1]{\hyperlink{#1}{\beameroldcitepalias{#1}}}
+\newcommand{\citepsmall}[1]{{\smaller\citep{#1}}}
+\newcommand{\citepsmallfull}[1]{{\smaller\citepfull{#1}}}
+\newcommand{\citeptitle}[1]{\hfill{\smaller[2]\citep{#1}}}
+
+\let\beameroldbibitem=\bibitem
+\renewcommand{\bibitem}[2][]{\label{#2}\beameroldbibitem[#1]{#2}}
+\providecommand{\newblock}{}
+
+% --- Custom underline -------------------------------------------------------
+\RequirePackage{contour}
+\RequirePackage{ulem}
+
+\renewcommand{\ULdepth}{1.8pt}
+\contourlength{0.8pt}
+
+\newcommand{\myuline}[1]{%
+  \uline{\phantom{#1}}%
+  \llap{\contour{white}{#1}}%
+}
+
+% --- Stackengine and TikZ ---------------------------------------------------
+\RequirePackage{stackengine}
+%\RequirePackage{showframe}
+\usetikzlibrary{positioning}
+\usetikzlibrary{arrows.meta}
+
+% --- Table helpers ----------------------------------------------------------
+\RequirePackage{array}
+\RequirePackage{booktabs}
+\RequirePackage{multirow}
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}p{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}p{#1}}
+\interfootnotelinepenalty=10000
+
+% --- Larger delimiters ------------------------------------------------------
+\makeatletter
+%\newcommand{\vast}{\bBigg@{4}}
+\newcommand{\Vast}{\bBigg@{3}}
+\makeatother
+
+% --- Footnotes --------------------------------------------------------------
+\renewcommand*{\thefootnote}{\fnsymbol{footnote}} % asterisk for footnote
+
+% --- Misc helpers -----------------------------------------------------------
+\RequirePackage{bm}
+\RequirePackage{setspace}
+\def\diag{{\textrm {diag} }\,}
+
+% --- Vector arrow helpers ---------------------------------------------------
+\makeatletter
+\newlength\pvec@height
+\newlength\pvec@depth
+\newlength\pvec@width
+\newcommand{\pvec}[2][]{%
+    \settoheight{\pvec@height}{$#2$}
+    \settodepth{\pvec@depth}{$#2$}
+    \settowidth{\pvec@width}{$#2$}
+  \def\pvec@arg{#1}
+  \raisebox{.2ex}{\raisebox{\pvec@height}{\rlap{%
+    \kern.05em
+    \begin{tikzpicture}[scale=1,shorten >=-3pt,shorten <=-3pt]
+    \pgfsetroundcap
+    \coordinate (Stx) at (.05em,0) ;
+    \coordinate (Arx) at (\pvec@width-.05em,0) ;
+    \draw[->](Stx) to[bend right] (Arx);
+    \end{tikzpicture}
+  }}}%
+  #2
+}
+
+\newcommand{\pvecl}[2][]{% for downward arrow
+    \settoheight{\pvec@height}{$#2$}
+    \settodepth{\pvec@depth}{$#2$}
+    \settowidth{\pvec@width}{$#2$}
+  \def\pvec@arg{#1}
+  \raisebox{.2ex}{\raisebox{\pvec@height}{\rlap{%
+    \kern.05em
+    \begin{tikzpicture}[scale=1,shorten >=-3pt,shorten <=-3pt]
+    \pgfsetroundcap
+    \coordinate (Stx) at (.05em,0) ;
+    \coordinate (Arx) at (\pvec@width-.05em,0) ;
+    \draw[->](Stx) to[bend right] (Arx);
+    \end{tikzpicture}
+  }}}%
+  #2
+}
