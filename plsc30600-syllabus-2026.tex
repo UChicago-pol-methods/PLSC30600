@@ -1,0 +1,274 @@
+\documentclass[letterpaper, 12pt, parskip=full,DIV=10]{scrartcl}
+
+\title{PLSC 30600: Causal Inference.}
+\subtitle{University of Chicago, Winter 2026.}
+
+\RequirePackage{assets/template_MOW}
+
+
+
+\begin{document}
+\nobibliography{assets/PLSC30600}
+\maketitle
+
+\vskip -10 ex
+
+\textbf{Location:} Cobb Hall 110\\
+\textbf{Course time:} Mon/Wed 16:30--17:50
+
+\textbf{Instructor:} Molly Offer-Westort; \href{mailto:mollyow@uchicago.edu}{mollyow@uchicago.edu}\\
+\textbf{Office hours:} Book at \url{https://calendar.app.google/wmSJFvfyxnDHFK5C9}\\
+\textbf{Office:} Pick Hall 328
+
+\textbf{Primary TA:} Maggie Wang; \href{mailto:mxwang@uchicago.edu}{mxwang@uchicago.edu}; \url{https://maggiexwang.github.io/}\\
+\textbf{Discussion sections:} Fri 10:30--11:20 (Regenstein Library 207) or 13:30--14:20 (Cobb Hall 106)
+
+\textbf{Supplementary math TA:} Sophia Lipkin; \href{mailto:slipkin@uchicago.edu}{slipkin@uchicago.edu}\\
+\textbf{Math section:} Thu 14:00--15:00 (Pick 407, beginning Week 2)
+
+\paragraph{Course overview.} This is the second course in quantitative methods in the Political Science PhD program. The course is an introduction to the theory and practice of causal inference from quantitative data. It will cover the potential outcomes framework, the design and analysis of experiments, matching, weighting, regression adjustment, differences-in-differences, instrumental variables, regression discontinuity designs and more. Students will examine and implement these approaches through a variety of examples from across the social sciences. The course will use the R programming language for statistical computing.
+
+\paragraph{Prerequisites.} Completing the introductory course in the political science graduate methodology sequence should prepare you for the material in this class. We will rely on background knowledge of core concepts in probability, statistics, and inference as well as experience with statistical programming in R. Familiarity with regression modeling is a plus but not strictly required. Please contact the instructor if you are interested in enrolling but are unsure of the requirements.
+
+\paragraph{Course logistics.} 
+We will use a private \textsc{Stack Overflow} forum as a course discussion platform. 
+You will be sent a private invite to join the forum at the start of the quarter. 
+Lecture materials, problem sets and section code will be posted on the course GitHub page at \url{https://github.com/UChicago-pol-methods/PLSC30600}. 
+Problem set solutions will be posted after the due date on Canvas. 
+You should attend sections regularly as they comprise a significant element of the course instruction.
+
+\paragraph{Supplementary math section.} 
+Beginning in Week 2, we will offer an optional supplementary math section led by Sophia Lipkin. 
+This session is not a formal course component and is not required, nor does it affect your grade. 
+However, we strongly recommend it for doctoral students, as well as for MA and masters students who plan to continue on to Bobby Gulotty's estimation course in the spring. 
+Attendance at this supplementary section is entirely optional, but it is designed to support students who would benefit from additional mathematical foundations for causal inference and estimation. 
+
+\paragraph{Course text.} 
+The primary textbook for the course is:
+\begin{itemize}
+\item \bibentry{aronow-miller_2019} \vskip 1 ex
+A free online version of the book is available through the University library: \url{http://pi.lib.uchicago.edu/1001/cat/bib/12622551}
+\end{itemize}
+
+
+\paragraph{Additional references:}
+\begin{itemize}
+\item \bibentry{hernan-robins_2010} \vskip 1 ex
+A free PDF version of the text is available here: \url{https://miguelhernan.org/whatifbook} \vskip 2 ex
+\item \bibentry{angrist_2009} 
+\end{itemize}
+
+\paragraph{Computing.} This course will use the \texttt{R} programming language. 
+If you haven't done so already, you should download and install it from \url{http://www.r-project.org}. 
+For this course, I recommend using the free, open source \href{https://rstudio.com}{RStudio} Desktop IDE. 
+You can also use any other IDE or editor of your choice, or run R from the command line. 
+\href{https://code.visualstudio.com/}{Visual Studio Code} with the R extension is another good option, although support for interactive R sessions is not as seamless as in RStudio. 
+
+\section*{Course outline.}
+
+\subsection*{Week 1. Getting oriented.}
+\begin{itemize}
+\item Course introduction and workflow.
+\item Potential outcomes framework and links to missing data.
+\item Identification via bounds and basic framing.
+\end{itemize}
+
+\subsubsection*{Readings.}
+\begin{itemize}
+\item \bibentry{holland_1986}
+\item Hernán and Robins, Section 1
+\item Aronow \& Miller, Sections 6.1.1--6.1.3 and 7.1.1--7.1.2
+\end{itemize}
+
+\subsubsection*{Reference readings.}
+\begin{itemize}
+\item \bibentry{rubin_1974}
+\item \bibentry{rubin_1976}
+\item \bibentry{manski_1990}
+\item \bibentry{ding_2023}, Appendices A--C
+\end{itemize}
+
+\textbf{Problem Set 1 assigned TBA, due TBA}
+
+\subsection*{Week 2. Fundamentals of identification and the role of the propensity score.}
+\begin{itemize}
+\item Random assignment and ignorability.
+\item Propensity scores for causal inference and missing data.
+\item Post-treatment variables and non-binary treatments.
+\item DAGs. 
+\end{itemize}
+
+\subsubsection*{Readings.}
+\begin{itemize}
+\item Aronow \& Miller, Sections 6.1.4 and 7.1.4--7.1.8
+\item \bibentry{rosenbaum-rubin_1983}
+\end{itemize}
+
+\subsubsection*{Reference readings.}
+\begin{itemize}
+\item \bibentry{greenland-et-al_1999}
+\end{itemize}
+
+\subsection*{Week 3. Assumptions: Missing at Random and Ignorability.}
+\begin{itemize}
+\item Plug-in and regression estimators under MAR/ignorability.
+\item Hot deck imputation and practical estimation choices.
+\end{itemize}
+
+\subsubsection*{Readings.}
+\begin{itemize} 
+\item Aronow \& Miller, Sections 6.2.1--6.2.3 and 7.2.1--7.2.2
+\item \bibentry{lin_2013}
+\item \url{https://blogs.worldbank.org/en/impactevaluations/regression-adjustment-in-randomized-experiments-is-the-cure-really-worse-than-the-disease}
+\item \url{https://blogs.worldbank.org/en/impactevaluations/guest-post-by-winston-lin-regression-adjustment-in-randomized-experiments-is-the-cure-really-worse-0}
+\end{itemize}
+
+\subsubsection*{Reference readings.}
+\begin{itemize}
+\item \bibentry{little-rubin_2002}
+\item \bibentry{freedman_2008}
+\end{itemize}
+
+\textbf{Problem Set 2 assigned TBA, due TBA}
+
+\subsection*{Week 4. More approaches to estimation.}
+\begin{itemize}
+\item Matching and weighting estimators.
+\item Propensity score estimation and ML plug-in approaches.
+\item Causal effect estimation under ignorability.
+\end{itemize}
+
+\subsubsection*{Readings.}
+\begin{itemize}
+\item Aronow \& Miller, Sections 6.2.4--6.2.5 and 7.2.3--7.2.6
+\end{itemize}
+
+\subsubsection*{Reference readings.}
+\begin{itemize}
+\item \bibentry{dehejia-wahba_1999}
+\item \bibentry{lalonde_1986}
+\item \bibentry{ho-et-al_2007}
+\end{itemize}
+
+\subsection*{Week 5. Overlap and positivity.}
+\begin{itemize}
+\item Overlap and positivity, including target population changes.
+\item Empirical overlap diagnostics and weighting behavior.
+\item \textcolor{gray}{\textit{Tentatively:} Doubly robust estimation and placebo testing.}
+\item \textcolor{gray}{\textit{Tentatively:} Sensitivity analysis.}
+\end{itemize}
+
+\subsubsection*{Readings.}
+\begin{itemize}
+\item Aronow \& Miller, Section 7.3
+\item \textcolor{gray}{\textit{Tentatively:} Aronow \& Miller, Sections 6.2.6 and 7.2.7--7.2.8}
+\end{itemize}
+
+\subsubsection*{Reference readings.}
+\begin{itemize}
+\item \bibentry{bang-robins_2005}
+\item \bibentry{vanderweele-ding_2017}
+\item \bibentry{rosenbaum_1987}
+\end{itemize}
+
+\textbf{Midterm Exam assigned TBA, due TBA}
+
+\subsection*{Week 6. Design-based inference.}
+\begin{itemize}
+\item \textcolor{black}{Randomization inference vs.\ asymptotic inference (permutation tests, Fisher vs.\ Neyman views).}
+\item \textcolor{black}{Blocked/stratified randomization and analysis.}
+\item \textcolor{black}{Cluster-randomized designs (and why SEs change).}
+\item \textcolor{gray}{\textit{Tentatively:} Power / MDE and design tradeoffs.}
+\item \textcolor{gray}{\textit{Tentatively:} Interference/spillovers (exposure mappings, spillover-robust estimands).}
+\end{itemize}
+
+\subsubsection*{Readings.}
+\begin{itemize}
+\item \bibentry{gerber-green_2012}, Chapter 3 (Sections 3.1--3.5), pp.\ 51--70
+\item \bibentry{fisher_1935}, Chapters 1--2. 
+\end{itemize}
+
+\subsubsection*{Reference readings.}
+\begin{itemize}
+\item \bibentry{neyman_1923}
+\item \bibentry{sarndal-et-al_1992}, Chapters 1--3.3
+\item \bibentry{hudgens-halloran_2008}
+\item \bibentry{miguel-kremer_2004}
+\item \bibentry{aronow-et-al_2025}
+\end{itemize}
+
+\subsection*{Week 7. Research designs: Instrumental variables and regression discontinuity.}
+\begin{itemize}
+\item IV: complier LATE framework. Weak instruments and diagnostics.
+\item How LATE interpretation depends on design and compliance behavior.
+\item \textcolor{gray}{\textit{Tentatively:} Multiple instruments / overidentification logic.}
+\item \textcolor{black}{RD. Sharp vs.\ fuzzy RD.}
+\item \textcolor{black}{Bandwidth choice and sensitivity.}
+\end{itemize}
+
+\subsubsection*{Readings.}
+\begin{itemize}
+\item \bibentry{imbens-angrist_1994}
+\item \bibentry{imbens-lemieux_2008}
+\item \bibentry{angrist-et-al_1996}
+\item \bibentry{mccrary_2008}
+\end{itemize}
+
+\subsubsection*{Reference readings.}
+\begin{itemize}
+\item \bibentry{cattaneo-et-al_2019}
+\item \bibentry{staiger-stock_1997}
+\item \bibentry{lee_2008}
+
+\end{itemize}
+
+\textbf{Problem Set 3 assigned TBA, due TBA}
+
+\subsection*{Week 8. Research designs: Differences in differences and approaches with panel data.}
+\begin{itemize}
+\item Modern DiD/event studies
+\item Staggered adoption problems for TWFE.
+\item Group-time ATT estimators and event-study plots.
+\item Parallel trends diagnostics + sensitivity/robustness checks.
+\item Synthetic control family.
+\end{itemize}
+
+\subsubsection*{Readings.}
+\begin{itemize}
+\item \bibentry{bertrand-et-al_2004}
+\item \bibentry{callaway-santanna_2021}
+\end{itemize}
+
+\subsubsection*{Reference readings.}
+\begin{itemize}
+\item \bibentry{goodman-bacon_2021}
+\item \bibentry{sun-abraham_2021}
+\item \bibentry{abadie-et-al_2010}
+\item \bibentry{abadie-gardeazabal_2003}
+\item \bibentry{card-krueger_1994}
+\end{itemize}
+
+\textbf{Take-home final assigned TBA, due TBA}
+
+\subsection*{Week 9. External validity.}
+\begin{itemize}
+\item Generalizability/transportability: from sample to target population.
+\item Multi-site experiments and heterogeneity.
+\item Design-based external validity: sampling frames + weighting for representativeness (with connections to week 6).
+\end{itemize}
+
+\subsubsection*{Readings.}
+\begin{itemize}
+\item \bibentry{cole-stuart_2010}
+\item \bibentry{deaton-cartwright_2018}
+\end{itemize}
+
+\subsubsection*{Reference readings.}
+\begin{itemize}
+\item \bibentry{tipton_2013}
+\item \bibentry{pearl-bareinboim_2014}
+\end{itemize}
+
+\textbf{In-class final exam during exam xeek (March 10 -- March 13)}
+
+\end{document}
