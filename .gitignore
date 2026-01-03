@@ -26,3 +26,4 @@
 *.vrb
 *.xdv
 readings
+.claude/settings.local.json
