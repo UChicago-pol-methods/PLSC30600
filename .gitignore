@@ -25,5 +25,6 @@
 *.snm
 *.vrb
 *.xdv
+*concordance.tex
 readings
 .claude/settings.local.json
