@@ -64,7 +64,12 @@ For this course, I recommend using the free, open source \href{https://rstudio.c
 You can also use any other IDE or editor of your choice, or run R from the command line. 
 \href{https://code.visualstudio.com/}{Visual Studio Code} with the R extension is another good option, although support for interactive R sessions is not as seamless as in RStudio. 
 
-\paragraph{Sweave.} To more easily create documents that combine R code and prose, we will compile assignments using Sweave (\url{https://support.posit.co/hc/en-us/articles/200552056-Using-Sweave-and-knitr}). Sweave requires you to have a \LaTeX{} distribution installed on your machine (\url{https://www.latex-project.org/get/}). You should familiarize yourself with creating and compiling Sweave documents before your first lab meeting.
+\paragraph{Compiling reports.} To generate pdf reports, you need to have a version of LaTeX installed. If you don't already use LaTeX, you can install TinyTeX, which is a lightweight, flexible LaTeX installation.
+To install TinyTex, you can run the code below in R.
+\begin{verbatim}
+install.packages('tinytex', repos = "http://cran.us.r-project.org")
+tinytex::install_tinytex()  # install TinyTeX
+\end{verbatim}
 
 \paragraph{Grading and due dates.} There are three homework assignments, an in-class midterm and a take-home midterm, and an in-class final and a take-home final. 
 Homeworks are graded on a 0--3 scale: 0 (not submitted), 1 (check--), 2 (check), 3 (check+). Participation (including sections) is worth 10 points. 
