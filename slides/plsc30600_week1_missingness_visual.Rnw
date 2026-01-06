@@ -1,0 +1,401 @@
+% !Rnw weave = Sweave
+\documentclass[xcolor={dvipsnames}]{beamer}
+
+\RequirePackage{../assets/pres-template_MOW}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setlength{\tabcolsep}{1.3pt}
+\title{PLSC 30600}
+\subtitle{Week 1 mini deck: Bounded outcomes and missingness}
+\date{Winter 2026}
+\author{Molly Offer-Westort}
+\institute{Department of Political Science, \\University of Chicago}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+%-------------------------------------------------------------------------------%
+\frame{\titlepage
+\thispagestyle{empty}
+}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Data generating process (bounded outcomes)}
+\small
+\begin{verbatim}
+set.seed(30600)
+n <- 500
+X <- factor(sample(c("A","B","C","D"), n, replace = TRUE,
+                   prob = c(0.15, 0.25, 0.35, 0.25)))
+mu <- c(A = 0.25, B = 0.40, C = 0.60, D = 0.75)[X]
+phi <- 10                        # concentration
+Y <- rbeta(n, mu * phi, (1 - mu) * phi)
+
+# Missingness mechanisms (50% observed each)
+# MCAR:  random half observed
+# MAR:   Pr(R=1|X) piecewise by X bins (all X have positive chance)
+# MNAR:  selection by Y (higher Y more likely observed)
+\end{verbatim}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+<<missingness-plot-setup, echo=FALSE, message=FALSE, warning=FALSE>>=
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(ggdist)
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73",
+               "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+theme_base <- if (requireNamespace("hrbrthemes", quietly = TRUE)) {
+  hrbrthemes::theme_ipsum_rc(base_size = 13)
+} else {
+  theme_minimal(base_size = 13)
+}
+
+custom_theme <- theme_base +
+  theme(
+    plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 11),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
+
+set.seed(30600)
+n <- 500
+X <- factor(sample(c("A","B","C","D"), n, replace = TRUE,
+                   prob = c(0.15, 0.25, 0.35, 0.25)))
+mu <- c(A = 0.25, B = 0.40, C = 0.60, D = 0.75)[X]
+phi <- 10
+Y <- rbeta(n, mu * phi, (1 - mu) * phi)
+
+idx_mcar <- sample.int(n, size = n / 2)
+r_mcar <- integer(n)
+r_mcar[idx_mcar] <- 1
+
+mar_probs <- c(A = 0.20, B = 0.40, C = 0.60, D = 0.80)
+p_mar <- mar_probs[X]
+idx_mar <- sample.int(n, size = n / 2, prob = p_mar)
+r_mar <- integer(n)
+r_mar[idx_mar] <- 1
+
+score_mnar <- Y + rnorm(n, sd = 0.05)
+r_mnar <- as.integer(score_mnar >= median(score_mnar))
+
+df <- tibble(
+  X = X,
+  Y = Y,
+  Complete = 1,
+  MCAR = r_mcar,
+  MAR = r_mar,
+  MNAR = r_mnar
+) |>
+  pivot_longer(cols = c(Complete, MCAR, MAR, MNAR),
+               names_to = "mechanism", values_to = "R") |>
+  mutate(
+    mechanism = factor(mechanism, levels = c("MCAR", "MAR", "MNAR", "Complete")),
+    status = ifelse(R == 1, "Observed", "Missing")
+  )
+
+plot_missingness <- ggplot(df, aes(x = X, y = Y, color = status)) +
+  geom_point(alpha = 0.8, size = 1,
+             position = position_jitter(width = 0.15, height = 0)) +
+  facet_wrap(~ mechanism, nrow = 2) +
+  scale_color_manual(values = c("Observed" = cbPalette[6], "Missing" = "grey80")) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
+  labs(
+    title = "Different missingness mechanisms",
+    x = "X ((slightly jittered) categorical covariate)",
+    y = "Y (bounded outcome)",
+    color = ""
+  ) +
+  custom_theme
+
+manski_bounds <- function(y, r) {
+  lower <- mean(ifelse(r == 1, y, 0))
+  upper <- mean(ifelse(r == 1, y, 1))
+  c(lower = lower, upper = upper)
+}
+
+mu_mcar <- function(y, r) {
+  mean(y[r == 1])
+}
+
+mu_mar <- function(y, r, x) {
+  x <- factor(x)
+  bin_means <- tapply(y[r == 1], x[r == 1], mean)
+  bin_weights <- prop.table(table(x))
+  sum(bin_means[names(bin_weights)] * bin_weights)
+}
+
+true_mu <- mean(Y)
+mechanisms <- c("MCAR", "MAR", "MNAR")
+
+estimates <- lapply(mechanisms, function(m) {
+  r <- df |> filter(mechanism == m) |> pull(R)
+  bounds <- manski_bounds(Y, r)
+  tibble(
+    mechanism = m,
+    estimator = c("Manski bounds", "MCAR", "MAR"),
+    estimate = c(true_mu, mu_mcar(Y, r), mu_mar(Y, r, X)),
+    lower = bounds["lower"],
+    upper = bounds["upper"]
+  )
+}) |> bind_rows() |>
+  mutate(
+    mechanism = factor(mechanism, levels = c("MCAR", "MAR", "MNAR")),
+    estimator = factor(estimator, levels = c("Manski bounds", "MCAR", "MAR")),
+    x_num = as.numeric(estimator)
+  )
+
+band_data <- estimates[estimates$estimator == "Manski bounds", ]
+band_data$xmin <- band_data$x_num - 0.25
+band_data$xmax <- band_data$x_num + 0.25
+
+plot_estimators <- ggplot(estimates, aes(x = x_num, y = estimate, color = estimator)) +
+  geom_rect(
+    data = band_data,
+    aes(xmin = xmin, xmax = xmax, ymin = lower, ymax = upper),
+    inherit.aes = FALSE,
+    fill = cbPalette[1], alpha = 0.25, color = NA
+  ) +
+  geom_point(aes(alpha = estimator), size = 2.6) +
+  geom_hline(yintercept = true_mu, linetype = "dashed", color = "grey40") +
+  facet_wrap(~ mechanism, nrow = 1) +
+  scale_color_manual(
+    values = c("Manski bounds" = cbPalette[1],
+               "MCAR" = cbPalette[6],
+               "MAR" = cbPalette[4])
+  ) +
+  scale_alpha_manual(values = c("Manski bounds" = 0, "MCAR" = 1, "MAR" = 1), guide = "none") +
+  scale_x_continuous(
+    breaks = 1:3,
+    labels = c("Manski\nbounds", "MCAR", "MAR")
+  ) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
+  labs(
+    title = "Plug-in estimators vs. true mean",
+    x = "",
+    y = "Estimate",
+    color = ""
+  ) +
+  custom_theme +
+  theme(axis.text.x = element_text(angle = 20, hjust = 0.5))
+
+B <- 1000
+boot_df <- lapply(c("MCAR","MAR","MNAR"), function(m) {
+  r_all <- list(MCAR = r_mcar, MAR = r_mar, MNAR = r_mnar)[[m]]
+  boot_mat <- replicate(B, {
+    idx <- sample.int(n, n, replace = TRUE)
+    y_b <- Y[idx]
+    r_b <- r_all[idx]
+    x_b <- X[idx]
+    c(
+      mcar = mu_mcar(y_b, r_b),
+      mar = mu_mar(y_b, r_b, x_b),
+      manski_lo = unname(manski_bounds(y_b, r_b)["lower"]),
+      manski_hi = unname(manski_bounds(y_b, r_b)["upper"])
+    )
+  })
+  as_tibble(t(boot_mat)) |>
+    mutate(mechanism = m, iter = row_number())
+}) |>
+  bind_rows() |>
+  mutate(mechanism = factor(mechanism, levels = c("MCAR", "MAR", "MNAR")))
+@
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Complete vs.\ MCAR vs.\ MAR vs.\ MNAR}
+\begin{center}
+<<fig=TRUE, echo=FALSE, fig.width=11, fig.height=6>>=
+plot_missingness
+@
+\end{center}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Estimators}
+\small
+\begin{verbatim}
+manski_bounds <- function(y, r) {
+  lower <- mean(ifelse(r == 1, y, 0))
+  upper <- mean(ifelse(r == 1, y, 1))
+  c(lower = lower, upper = upper)
+}
+
+mu_mcar <- function(y, r) {
+  mean(y[r == 1])
+}
+
+mu_mar <- function(y, r, x) {
+  x <- factor(x)
+  bin_means <- tapply(y[r == 1], x[r == 1], mean)
+  bin_weights <- prop.table(table(x))
+  sum(bin_means[names(bin_weights)] * bin_weights)
+}
+\end{verbatim}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}{Estimators relative to the true mean}
+\begin{center}
+<<fig=TRUE, echo=FALSE, fig.width=11, fig.height=3.6>>=
+plot_estimators
+@
+\end{center}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Bootstrap: sampling variability}
+\scriptsize
+\begin{verbatim}
+B <- 1000
+boot_df <- lapply(c("MCAR","MAR","MNAR"), function(m) {
+  r_all <- list(MCAR = r_mcar, MAR = r_mar, MNAR = r_mnar)[[m]]
+  boot_mat <- replicate(B, {
+    idx <- sample.int(n, n, replace = TRUE)
+    y_b <- Y[idx]
+    r_b <- r_all[idx]
+    x_b <- X[idx]
+    c(mcar = mu_mcar(y_b, r_b),
+      mar = mu_mar(y_b, r_b, x_b),
+      manski_lo = unname(manski_bounds(y_b, r_b)["lower"]),
+      manski_hi = unname(manski_bounds(y_b, r_b)["upper"]))
+  })
+  as_tibble(t(boot_mat)) |>
+    mutate(mechanism = m, iter = row_number())
+}) |>
+  bind_rows()
+
+boot_long <- boot_df |>
+  pivot_longer(cols = c(mcar, mar, manski_lo, manski_hi),
+               names_to = "estimator", values_to = "estimate")
+\end{verbatim}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Bootstrap distributions (MCAR vs.\ MAR)}
+\begin{center}
+<<fig=TRUE, echo=FALSE, fig.width=11, fig.height=3.6>>=
+boot_long <- boot_df |>
+  pivot_longer(cols = c(mcar, mar),
+               names_to = "estimator", values_to = "estimate") |>
+  mutate(
+    estimator = factor(estimator,
+                        levels = c("mcar", "mar"),
+                        labels = c("MCAR", "MAR"))
+  )
+
+plot_boot <- ggplot(boot_long, aes(x = estimator, y = estimate, fill = estimator)) +
+  ggdist::stat_slab(aes(thickness = after_stat(pdf * n)),
+                    scale = 0.7, orientation = "vertical") +
+  ggdist::stat_dotsinterval(side = "left", scale = 0.7,
+                            slab_linewidth = NA, orientation = "vertical") +
+  facet_wrap(~ mechanism, nrow = 1) +
+  geom_hline(yintercept = true_mu, linetype = "dashed", color = "grey40") +
+  scale_fill_manual(values = c("MCAR" = cbPalette[6],
+                               "MAR" = cbPalette[4])) +
+  scale_y_continuous(limits = c(0.4, 0.8), breaks = seq(0, 1, 0.2)) +
+  labs(
+    title = "Bootstrap distributions by mechanism (MCAR vs. MAR)",
+    x = "",
+    y = "Estimate",
+    fill = ""
+  ) +
+  custom_theme
+
+plot_boot
+@
+\end{center}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Manski bounds}
+\begin{center}
+<<fig=TRUE, echo=FALSE, fig.width=11, fig.height=3.6>>=
+interval_df <- boot_df |>
+  group_by(mechanism) |>
+  slice_sample(n = 100) |>
+  mutate(
+    includes = manski_lo <= true_mu & true_mu <= manski_hi,
+    row = row_number()
+  )
+
+plot_intervals <- ggplot(interval_df, aes(x = row)) +
+  geom_segment(aes(y = manski_lo, yend = manski_hi, xend = row, color = includes),
+               linewidth = .1, alpha = 0.8) +
+  geom_hline(yintercept = true_mu, linetype = "dashed", color = "grey40") +
+  facet_wrap(~ mechanism, nrow = 1) +
+  scale_color_manual(values = c("TRUE" = cbPalette[4], "FALSE" = cbPalette[7])) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
+  labs(
+    x = "",
+    y = "Estimate",
+    color = "Covers true mean"
+  ) +
+  custom_theme +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+
+plot_intervals
+@
+\end{center}
+\end{frame}
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Bootstrap percentile CIs (95\%)}
+\small
+\begin{verbatim}
+ci_95 <- boot_df |>
+  pivot_longer(cols = c(mcar, mar),
+               names_to = "estimator", values_to = "estimate") |>
+  group_by(mechanism, estimator) |>
+  summarize(
+    lo = quantile(estimate, 0.025, na.rm = TRUE),
+    hi = quantile(estimate, 0.975, na.rm = TRUE),
+    .groups = "drop"
+  )
+\end{verbatim}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Bootstrap CIs + bias summary}
+\begin{center}
+<<fig=TRUE, echo=FALSE, fig.width=10, fig.height=3.2>>=
+summary_tbl <- boot_df |>
+  pivot_longer(cols = c(mcar, mar, manski_lo, manski_hi),
+               names_to = "estimator", values_to = "estimate") |>
+  group_by(mechanism, estimator) |>
+  summarize(
+    lo = quantile(estimate, 0.025, na.rm = TRUE),
+    hi = quantile(estimate, 0.975, na.rm = TRUE),
+    mean_est = mean(estimate, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(
+    bias = ifelse(estimator %in% c("mcar", "mar"), mean_est - true_mu, NA_real_),
+    estimator = factor(estimator,
+                        levels = c("mcar", "mar", "manski_lo", "manski_hi"),
+                        labels = c("MCAR", "MAR", "Manski lower", "Manski upper"))
+  ) |>
+  arrange(mechanism, estimator)
+
+summary_tbl$lo <- sprintf("%.3f", summary_tbl$lo)
+summary_tbl$hi <- sprintf("%.3f", summary_tbl$hi)
+summary_tbl$bias <- ifelse(is.na(summary_tbl$bias), "--", sprintf("%.3f", summary_tbl$bias))
+
+tab <- summary_tbl |>
+  select(mechanism, estimator, lo, hi, bias)
+
+gridExtra::grid.table(tab)
+@
+\end{center}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\end{document}

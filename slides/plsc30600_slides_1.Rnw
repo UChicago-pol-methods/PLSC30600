@@ -1,5 +1,5 @@
 % !Rnw weave = Sweave
-\documentclass[xcolor={dvipsnames}, handout]{beamer}
+\documentclass[xcolor={dvipsnames}]{beamer}
 
 \RequirePackage{../assets/pres-template_MOW}
 
@@ -676,6 +676,29 @@ $i$ & $Y_i(0)$ & \textcolor{Violator1}{$R_i$} & \textcolor{Violator1}{$\widehat{
 \E[Y_i] & = \sum_x \E[Y_i^* \mid R_i=1, X_i=x] \Pr[X_i=x] \\
 & = \E\bigl[ \E[Y_i \mid R_i=1, X_i] \bigr]
 \end{align*}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{MAR plug-in estimator}
+
+\begin{wideitemize}
+\item Sample analogue (plug-in):\pause
+\end{wideitemize}
+
+\[
+\widehat{\E}[Y_i] =
+\sum_{x \in \Supp[X_i]}
+\widehat{\E}[Y_i \mid R_i=1, X_i=x]\,
+\widehat{\Pr}[X_i=x]
+\]
+
+\[
+\widehat{\E}[Y_i \mid R_i=1, X_i=x]
+=
+\frac{\sum_{i=1}^n Y_i^* R_i \cdot \mathbbm{1}(X_i=x)}
+{\sum_{i=1}^n R_i \cdot \mathbbm{1}(X_i=x)}
+\]
+
 \end{frame}
 
 %-------------------------------------------------------------------------------%

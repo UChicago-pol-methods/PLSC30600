@@ -1,0 +1,440 @@
+---
+title: "PLSC 30600 --- Homework 1"
+output:
+  pdf_document:
+    number_sections: false
+header-includes:
+  - "\\usepackage[margin=1in]{geometry}"
+  - "\\usepackage{amsmath, amssymb, amsthm}"
+  - "\\usepackage{booktabs}"
+  - "\\usepackage{enumitem}"
+  - "\\usepackage{hyperref}"
+  - "\\setlist[itemize]{noitemsep, topsep=2pt}"
+  - "\\setlist[enumerate]{itemsep=4pt, topsep=6pt}"
+  - "\\newcommand{\\E}{\\textrm{E}}"
+---
+\textbf{Due:} Fri, January 16 (11:59pm)
+
+\vspace{0.75em}
+
+\noindent \textbf{General instructions}
+\begin{itemize}
+  \item \textbf{Show your work} for all hand calculations. A final numeric answer without intermediate steps, formulas, and/or justification is not sufficient.
+  \item For coding problems, submit a reproducible script \texttt{(.R/.rmd/.rnw)} along with the fully compiled pdf. Set a random seed and report it.
+  \item Include a brief note describing how you used AI tools (if at all), consistent with the course AI policy.
+  \item For each proof question, start with one sentence naming the technique you are using
+(e.g., direct proof, Law of Iterated Expectations, bounding, counterexample, construction, contradiction).
+\end{itemize}
+
+\vspace{0.75em}
+\hrule
+\vspace{0.75em}
+
+
+\section*{Problem 0: Proof techniques mini-lab}
+
+For each part below: (i) state the technique you are using (e.g., bounding, counterexample, construction, Law of Iterated Expectations),
+and (ii) write a clean argument. You may use the Law of Iterated Expectations without re-proving it.
+Use Aronow–Miller proofs as templates for identification arguments. 
+Use Hammack or Velleman for general proof strategies (counterexample, construction, bounding, contrapositive).
+
+\begin{enumerate}[label=\textbf{0.\alph*}]
+  \item \textbf{Bounding argument.}
+  Let $\tilde Y_i$ be any completion of the missing outcomes such that
+  $\tilde Y_i = Y_i$ when $R_i=1$ and $\tilde Y_i \in [0,1]$ when $R_i=0$.
+  Let $\bar{\tilde Y} = \frac{1}{n}\sum_{i=1}^n \tilde Y_i$.
+  Prove that
+  \[
+    \underbrace{\frac{1}{n}\sum_{i=1}^n R_i Y_i}_{\text{impute missing as }0}
+    \;\le\;
+    \bar{\tilde Y}
+    \;\le\;
+    \underbrace{\frac{1}{n}\sum_{i=1}^n \big(R_i Y_i + (1-R_i)\big)}_{\text{impute missing as }1}.
+  \]
+  (Interpret these two endpoints as the plug-in Manski bounds.)
+
+  \item \textbf{Law of Iterated Expectations proof (MAR identification).}
+  Assume MAR given $X$:
+  \[
+    Y \perp R \mid X,
+    \qquad \Pr[R=1\mid X=x]>0 \text{ for each } x\in\{A,B\}.
+  \]
+  Prove that
+  \[
+    \E[Y] = \sum_{x\in\{A,B\}} \E[Y^*\mid R=1,X=x]\Pr[X=x].
+  \]
+  (Your proof should use the Law of Iterated Expectations and the MAR assumption at the appropriate step.)
+
+  \item \textbf{Counterexample (independence vs conditional independence).}
+  Consider binary random variables $X,Y,R\in\{0,1\}$ with $\Pr[X=0]=\Pr[X=1]=1/2$ and
+  \[
+  f_{Y,R\mid X}(y,r\mid x=0) =
+  \begin{cases}
+    1/2 & \text{if } (y,r)=(1,1),\\
+    1/2 & \text{if } (y,r)=(0,0),\\
+    0 & \text{otherwise},
+  \end{cases}
+  \qquad
+  f_{Y,R\mid X}(y,r\mid x=1) =
+  \begin{cases}
+    1/2 & \text{if } (y,r)=(1,0),\\
+    1/2 & \text{if } (y,r)=(0,1),\\
+    0 & \text{otherwise}.
+  \end{cases}
+  \]
+  \begin{enumerate}[label=(\roman*)]
+    \item Show that $Y \perp R$ (unconditional independence).
+    \item Show that $Y \not\!\perp R \mid X$ (conditional independence fails).
+  \end{enumerate}
+  Conclude: unconditional independence does \emph{not} imply conditional independence.
+\end{enumerate}
+
+\vspace{0.75em}
+\hrule
+\vspace{0.75em}
+
+\section*{Setup and toy dataset (used in Problem 1 and Coding A--B)}
+
+We observe i.i.d. draws of $(Y_i^*, R_i, X_i)$ for $i=1,\dots,n$, where:
+\begin{itemize}
+  \item $Y_i \in \{0,1\}$ is the outcome of interest (binary).
+  \item $R_i \in \{0,1\}$ is the \textbf{response/observation indicator}: $R_i=1$ means $Y_i$ is observed, $R_i=0$ means $Y_i$ is missing.
+  \item $Y_i^*$ is the recorded outcome:
+  \[
+    Y_i^* =
+    \begin{cases}
+      Y_i, & R_i=1,\\
+      -99, & R_i=0.
+    \end{cases}
+  \]
+  \item $X_i \in \{A,B\}$ is a covariate observed for \textbf{all} units (including nonrespondents).
+\end{itemize}
+
+\noindent The toy dataset is:
+
+\begin{center}
+\begin{tabular}{c c c c}
+\toprule
+$i$ & $X_i$ & $R_i$ & $Y_i^*$ \\
+\midrule
+1  & A & 1 & 0 \\
+2  & A & 0 & -99 \\
+3  & B & 1 & 1 \\
+4  & B & 0 & -99 \\
+5  & A & 1 & 0 \\
+6  & A & 0 & -99 \\
+7  & B & 1 & 1 \\
+8  & B & 0 & -99 \\
+9  & A & 1 & 1 \\
+10 & B & 0 & -99 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Throughout, let $\mu \equiv \E[Y]$ denote the population mean of $Y$.
+
+\vspace{0.75em}
+\hrule
+\vspace{0.75em}
+
+\section*{Problem 1: Manski bounds, MCAR, and MAR on the same dataset}
+
+\begin{enumerate}[label=\textbf{1.\alph*}]
+
+  \item \textbf{Manski bounds.}
+  Assume only that $Y\in[0,1]$. Compute the \textbf{plug-in} lower and upper bounds for $\mu=\E[Y]$ using the estimators from Aronow \& Miller Theorem 6.1.4.
+
+  \item \textbf{MCAR (point identification).}
+  Now assume \textbf{MCAR}:
+  \[
+    Y \perp R
+    \quad \text{and} \quad
+    \Pr[R=1]>0.
+  \]
+Compute the MCAR plug-in estimator $\widehat \mu_{\text{MCAR}}$ from the toy dataset.
+
+  \item \textbf{MAR given $X$ (point identification by stratification).}
+  Now assume \textbf{MAR given $X$}:
+  \[
+    Y \perp R \mid X,
+    \qquad \Pr[R=1\mid X=x]>0 \ \text{for each } x\in\{A,B\}.
+  \]
+Compute the MAR plug-in estimator $\widehat \mu_{\text{MAR}}$ from the toy dataset.
+
+  \item \textbf{Interpretation (short answer).}
+  \begin{enumerate}[label=(\roman*)]
+    \item Why is MCAR typically regarded as \textit{stronger} than MAR?
+    \item How does the positivity condition differ in spirit between MCAR and MAR?
+  \end{enumerate}
+
+
+\item \textbf{Sanity checks via bounding (proof).}
+Using the result from Problem 0(a), prove that both $\hat\mu_{\text{MCAR}}$ and $\hat\mu_{\text{MAR}}$
+(from this dataset) must lie inside the plug-in Manski bounds you computed.
+(Do \emph{not} argue by plugging in numbers; give an inequality argument.)
+\end{enumerate}
+
+
+\vspace{0.75em}
+\hrule
+\vspace{0.75em}
+
+
+
+\section*{Problem 2: Propensity scores for missing data}
+
+Let $p_R(X)\equiv \Pr[R=1\mid X]$ and assume MAR given $X$: $Y \perp R \mid X$.
+
+\begin{enumerate}[label=\textbf{2.\alph*}]
+  \item \textbf{Balance (conditioning on the propensity score).}
+  Show that
+  \[
+    R \perp X \mid p_R(X).
+  \]
+  \emph{Hint:} because $R$ is binary, it suffices to show
+  $\E[R\mid X, p_R(X)] = \E[R\mid p_R(X)]$.
+
+  \item \textbf{Outcome--response independence given the propensity score.}
+  Show that
+  \[
+    Y \perp R \mid p_R(X).
+  \]
+  \emph{Hint:} again use the binary-$R$ trick and the Law of Iterated Expectations; under MAR,
+  $\E[R\mid Y,X]=\E[R\mid X]=p_R(X)$.
+\end{enumerate}
+
+\vspace{0.75em}
+\hrule
+\vspace{0.75em}
+
+\section*{Problem 3: MCAR vs.\ MAR diagnostic thinking (vignette)}
+
+A city surveys residents to estimate turnout in the most recent election. Let $Y\in\{0,1\}$ indicate whether a person voted, $R\in\{0,1\}$ indicate survey response, and let $X$ be age group (recorded for everyone sampled from administrative data, including nonrespondents).
+
+The director believes:
+\begin{itemize}
+  \item older residents are more likely to respond (so $R$ depends on $X$),
+  \item turnout differs by age (so $Y$ depends on $X$).
+\end{itemize}
+
+\begin{enumerate}[label=\textbf{3.\alph*}]
+  \item Is MCAR ($Y\perp R$) plausible? Why or why not? (2--4 sentences)
+  \item Give a realistic story under which MAR given age ($Y\perp R \mid X$) might be plausible. What does the story rule out? (3--5 sentences)
+  \item Suppose age is \emph{only} observed for respondents (you do not observe $X$ when $R=0$). Which step in the MAR identification argument fails, and why? (3--5 sentences)
+\end{enumerate}
+
+\vspace{0.75em}
+\hrule
+\vspace{0.75em}
+
+\section*{Problem 4: Potential outcomes and the basic identification gap (Lemma 1)}
+
+Let $D\in\{0,1\}$ denote a treatment indicator. Let $Y(1)$ and $Y(0)$ be potential outcomes, and let the observed outcome be
+\[
+  Y = Y(1)D + Y(0)(1-D).
+\]
+
+\noindent \textbf{Lemma 1 (Identification gap).} In general,
+\[
+\E[Y(1)] \neq \E[Y\mid D=1]
+\quad \text{and} \quad
+\E[Y(0)] \neq \E[Y\mid D=0].
+\]
+
+\begin{enumerate}[label=\textbf{4.\alph*}]
+  \item \textbf{Exercise: Prove Lemma 1.}
+  Provide a proof by constructing a counterexample distribution for $(Y(0),Y(1),D)$ where at least one inequality holds. (You may use a finite ``science table'' counterexample or a probability model.)
+
+  \item \textbf{When does equality hold?}
+  State a sufficient condition under which
+  \[
+    \E[Y(1)] = \E[Y\mid D=1] \quad \text{and} \quad \E[Y(0)] = \E[Y\mid D=0].
+  \]
+  Briefly justify your answer (a short argument is sufficient).
+
+  \item \textbf{Selection bias decomposition.}
+  Starting from $\E[Y\mid D=1]-\E[Y\mid D=0]$, show that
+  \[
+    \E[Y\mid D=1]-\E[Y\mid D=0]
+    = \E[Y(1)-Y(0)\mid D=1] + \Big(\E[Y(0)\mid D=1]-\E[Y(0)\mid D=0]\Big).
+  \]
+  Interpret the two terms in 2--4 sentences.
+\end{enumerate}
+
+\vspace{0.75em}
+\hrule
+\vspace{0.75em}
+
+
+\section*{Problem 5: Continuous treatment and average marginal causal effects}
+
+Let $D$ be a continuous treatment with support $[0,1]$ and suppose each unit has
+potential outcomes $\{Y(d): d\in[0,1]\}$, with $Y(d)$ differentiable in $d$.
+Assume strong ignorability:
+\[
+\{Y(d)\}_{d\in[0,1]} \perp D \mid X,
+\qquad 0<\Pr[D\in \mathcal{N}\mid X] \ \text{for neighborhoods } \mathcal{N}\subset[0,1].
+\]
+
+\begin{enumerate}[label=\textbf{5.\alph*}]
+  \item Define the conditional response function $m(d,x)=\E[Y\mid D=d,X=x]$.
+  Show that under strong ignorability,
+  \[
+    \E[Y(d)] = \E\big[m(d,X)\big].
+  \]
+
+  \item Suppose
+  \[
+    m(d,x) = \alpha + \beta d + \gamma d^2 + \delta x + \eta (d\cdot x),
+  \]
+  where $x\in\{0,1\}$.
+  Compute $\frac{\partial}{\partial d}m(d,x)$.
+
+  \item The (population) average marginal causal effect (AMCE) is defined as
+  \[
+    \mathrm{AMCE} \equiv \E\!\left[\frac{\partial}{\partial d} m(D,X)\right].
+  \]
+  Assume $D\sim \mathrm{Uniform}(0,1)$ and $\Pr[X=1]=p$ with $D\perp X$.
+  Compute AMCE in terms of $(\beta,\gamma,\eta,p)$.
+  (Show your work, including any integrals you use.)
+\end{enumerate}
+
+\vspace{0.75em}
+\hrule
+\vspace{0.75em}
+
+
+\section*{Coding section}
+
+Your code should be readable and reproducible. 
+You may use Claude Code for assistance, but you are responsible for correctness and interpretation.
+
+\subsection*{Coding A: Replicate Problem 1 numerically}
+
+\begin{enumerate}[label=\textbf{A\arabic*.}]
+  \item Enter the toy dataset into your code (as a data frame with columns \texttt{i}, \texttt{X}, \texttt{R}, \texttt{Ystar}).
+  \begin{verbatim}
+toy <- data.frame(
+  i = 1:10,
+  X = c("A","A","B","B","A","A","B","B","A","B"),
+  R = c(1,0,1,0,1,0,1,0,1,0),
+  Ystar = c(0,-99,1,-99,0,-99,1,-99,1,-99)
+)
+  \end{verbatim}
+  \item Write a function that takes $(Y^*,R)$ and returns the plug-in Manski bounds for $\E[Y]$ when $Y\in[0,1]$.
+  \item Write a function that computes $\widehat{\mu}_{\text{MCAR}}$.
+  \item Write a function that computes $\widehat{\mu}_{\text{MAR}}$ by stratification on $X\in\{A,B\}$.
+  \item Print the three results (bounds, MCAR estimate, MAR estimate) and verify they match your hand calculations.
+\end{enumerate}
+
+\subsection*{Coding B: Bootstrap confidence intervals}
+
+Use the nonparametric bootstrap (resample rows with replacement).
+Letting $B$ be the number of bootstrap resamples, use $B= 100$.
+
+\begin{enumerate}[label=\textbf{B\arabic*.}]
+  \item For each bootstrap sample, compute:
+  \begin{itemize}
+    \item the lower and upper Manski bounds;
+    \item $\widehat{\mu}_{\text{MCAR}}$;
+    \item $\widehat{\mu}_{\text{MAR}}$.
+  \end{itemize}
+  (Do \textit{not} print out all 100, just show your code.)
+
+  \item \textbf{Positivity diagnostics in the bootstrap (MAR).}
+  In some bootstrap resamples, one of the strata (A or B) may have no respondents ($R=1$), making $\widehat{\mu}_{\text{MAR}}$ undefined.
+  \begin{itemize}
+    \item Report the fraction of bootstrap resamples in which $\widehat{\mu}_{\text{MAR}}$ is undefined.
+    \item For the resamples where it is defined, compute a 95\% percentile CI for $\mu$ under MAR.
+  \end{itemize}
+
+  \item Compute 95\% percentile bootstrap CIs for:
+  \[
+    \text{Lower bound},\quad \text{Upper bound},\quad \widehat{\mu}_{\text{MCAR}},\quad \widehat{\mu}_{\text{MAR}}.
+  \]
+\end{enumerate}
+
+
+
+\clearpage
+\section*{Proof toolbox (how to write the proofs in this homework)}
+
+Several questions ask for short proofs. You do \emph{not} need advanced real analysis.
+Most proofs in this course use a small set of reusable techniques. For each proof question:
+\begin{itemize}
+  \item start with a one-line label: \textbf{Technique:} direct proof / Law of Iterated Expectations / bounding / counterexample / construction / contradiction,
+  \item then write a short, logically complete argument (a clear sequence of equalities/inequalities or implications).
+\end{itemize}
+
+\vspace{0.5em}
+\noindent \textbf{1) Direct proof (``assume the conditions, derive the claim'')}
+\begin{itemize}
+  \item \textbf{When to use:} the statement is of the form ``If assumptions A hold, then conclusion C holds.''
+  \item \textbf{Template:} Assume A. Start from the left-hand side of what you want to show. Use definitions and algebra
+  (and known facts like linearity of expectation) to rewrite it step-by-step until you obtain the desired expression. End with $\square$.
+\end{itemize}
+
+\vspace{0.5em}
+\noindent \textbf{2) Law of Iterated Expectations (LIE)}
+\begin{itemize}
+  \item \textbf{Key fact:} for any random variables $Y,X$,
+  \[
+    E[Y] = E\!\big(E[Y\mid X]\big).
+  \]
+  \item \textbf{When to use:} identification arguments where you want to rewrite an unconditional target
+  (like $E[Y]$ or $E[Y(d)]$) using conditional expectations you can relate to observables.
+  \item \textbf{Typical move:} write $E[Y]=E(E[Y\mid X])$, then use an assumption (e.g., MAR/ignorability)
+  to replace $E[Y\mid X]$ with something observable like $E[Y^*\mid R=1,X]$.
+\end{itemize}
+
+\vspace{0.5em}
+\noindent \textbf{3) Bounding (and ``sharpness'' via extremal cases)}
+\begin{itemize}
+  \item \textbf{When to use:} the target contains an unknown quantity that is only known to lie in an interval.
+  \item \textbf{Template:} Rewrite the target so the unknown piece is explicit (often via LIE),
+  then replace the unknown term by its minimum to get a lower bound and by its maximum to get an upper bound.
+  \item \textbf{Sharpness:} after deriving bounds, show they are the best possible by \emph{constructing} two
+  data-generating processes (or two completions of missing outcomes) that attain the lower and upper bounds.
+\end{itemize}
+
+\vspace{0.5em}
+\noindent \textbf{4) Counterexample (disproving a false general claim)}
+\begin{itemize}
+  \item \textbf{When to use:} the claim says ``for all'' (e.g., ``in general $E[Y(1)]=E[Y\mid D=1]$'').
+  \item \textbf{Template:} give one explicit joint distribution (or a small ``science table'') where the assumptions hold
+  but the conclusion fails. One example is enough.
+\end{itemize}
+
+\vspace{0.5em}
+\noindent \textbf{5) Construction (showing existence or attaining an extremum)}
+\begin{itemize}
+  \item \textbf{When to use:} you must show something \emph{can} happen (e.g., sharpness, or that two DGPs are observationally equivalent).
+  \item \textbf{Template:} explicitly define the object you need (e.g., fill in missing $Y$ values, or define a DGP for $Y\mid R=0$),
+  then verify it matches the observed data/assumptions.
+\end{itemize}
+
+\vspace{0.5em}
+\noindent \textbf{6) Proof by contradiction (assume the opposite, derive an impossibility)}
+\begin{itemize}
+  \item \textbf{When to use:} to show a condition is necessary, or to show an event is impossible.
+  \item \textbf{Template:} assume the negation of the statement you want, then derive a contradiction
+  (e.g., a probability $<0$ or $>1$, or two different values for something that should be unique).
+\end{itemize}
+
+\vspace{0.5em}
+\noindent \textbf{Common ``allowed moves'' in this course}
+\begin{itemize}
+  \item Linearity: $E[aY+bW]=aE[Y]+bE[W]$ (and similarly for conditional expectations).
+  \item Conditioning on a function adds no information if you already condition on the variable:
+  $E[U\mid X, g(X)] = E[U\mid X]$.
+  \item If $R\in\{0,1\}$ is binary, its conditional distribution is determined by $E[R\mid \cdot]$.
+  So to prove a conditional independence involving $R$, it often suffices to show an equality of conditional expectations.
+\end{itemize}
+
+\noindent \textbf{Where you have already seen these in the reading}
+\begin{itemize}
+  \item Bounding + sharpness for missing data (Manski bounds): see the sharp bounds theorem and proof. 
+  \item Law of Iterated Expectations + substitution under MAR/ignorability: see the MAR identification proofs.
+  \item Binary-variable trick + conditioning arguments: see the propensity score theorem proof.
+  \item Counterexample using a science table: see the post-treatment-variable example.
+\end{itemize}
