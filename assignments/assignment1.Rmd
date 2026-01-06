@@ -97,7 +97,7 @@ Use Hammack or Velleman for general proof strategies (counterexample, constructi
 
 We observe i.i.d. draws of $(Y_i^*, R_i, X_i)$ for $i=1,\dots,n$, where:
 \begin{itemize}
-  \item $Y_i \in \{0,1\}$ is the outcome of interest (binary).
+  \item $Y_i \in [0,1]$ is the outcome of interest (bounded).
   \item $R_i \in \{0,1\}$ is the \textbf{response/observation indicator}: $R_i=1$ means $Y_i$ is observed, $R_i=0$ means $Y_i$ is missing.
   \item $Y_i^*$ is the recorded outcome:
   \[
@@ -117,16 +117,16 @@ We observe i.i.d. draws of $(Y_i^*, R_i, X_i)$ for $i=1,\dots,n$, where:
 \toprule
 $i$ & $X_i$ & $R_i$ & $Y_i^*$ \\
 \midrule
-1  & A & 1 & 0 \\
+1  & A & 1 & 0.20 \\
 2  & A & 0 & -99 \\
-3  & B & 1 & 1 \\
+3  & B & 1 & 0.80 \\
 4  & B & 0 & -99 \\
-5  & A & 1 & 0 \\
+5  & A & 1 & 0.25 \\
 6  & A & 0 & -99 \\
-7  & B & 1 & 1 \\
-8  & B & 0 & -99 \\
-9  & A & 1 & 1 \\
-10 & B & 0 & -99 \\
+7  & B & 1 & 0.85 \\
+8  & B & 1 & 0.90 \\
+9  & A & 0 & -99 \\
+10 & A & 1 & 0.30 \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -318,7 +318,7 @@ toy <- data.frame(
   i = 1:10,
   X = c("A","A","B","B","A","A","B","B","A","B"),
   R = c(1,0,1,0,1,0,1,0,1,0),
-  Ystar = c(0,-99,1,-99,0,-99,1,-99,1,-99)
+  Ystar = c(0.20,-99,0.80,-99,0.25,-99,0.85,0.90,-99,0.30)
 )
   \end{verbatim}
   \item Write a function that takes $(Y^*,R)$ and returns the plug-in Manski bounds for $\E[Y]$ when $Y\in[0,1]$.

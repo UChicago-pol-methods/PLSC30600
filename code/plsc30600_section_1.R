@@ -1,85 +1,33 @@
-#' ---
-#' title: "PLSC 30600 - Section 1"
-#' author: "<your name here>"
-#' date: ""
-#' ---
-#' 
-#' # Course setup instructions:
-#'  
-#' To get started in R: 
-#' 
-#' - download the latest version of R here: https://www.r-project.org/
-#' - download the free Rstudio desktop here: https://www.rstudio.com/
+#' Simulation Study
 #'
-#' To generate pdf reports, you need to have a version of LaTeX installed; LaTeX 
-#' is a typesetting software; R will call it under the hood to generate reports. 
-#' If you don't already use LaTeX, you can install TinyTeX, which is a 
-#' lightweight, flexible LaTeX installation. 
-#' 
-#' To install TinyTex, you can run the code below in R, (remove the hashtag 
-#' from in front). 
-# install.packages('tinytex', repos = "http://cran.us.r-project.org")
-# tinytex::install_tinytex()  # install TinyTeX
+#' Design a simulation that compares the behavior of three approaches:
+#' - Manski bounds
+#' - MCAR estimator (respondent mean)
+#' - MAR estimator (stratified by X or modeled via E[Y | R = 1, X])
 #'
-#' In this class, we will generate pdf reports based on R scripts with a method 
-#' called "spinning" in R.
-#' When spinning, we differentiate between regular R comments,
-# --which are formatted like this, with just the hashtag before them--
-#' and roxygen comments, which have #' before them. Roxygen comments can use 
-#' more advanced formatting, like making things **bold** or *italicized*. 
 #'
-#' ## 1. Set up a working directory for this class. 
-#' 
-#' a. Pick a location for this class somewhere on your own computer. Preferably 
-#' not on your desktop. Mine is here: 
-#' `~/Users/moffer/Documents/Git/teaching`. 
-#' 
-#' b. Clone the course repository locally.
-#' You can use Git, or download the ZIP from GitHub and unzip it.
-#' If you use Git, you can also use it later for pulls, but that is optional. 
-#' 
-#' c. Make sure that you have opened a version of this file that lives in the 
-#' `PLSC30600/code` folder. 
-#' 
-#' Starting with your class folder, your directory structure should look like 
-#' this:
-#' 
-#' ```
-#' | -PLSC30600 
-#' | |- assets
-#' | |- assignments
-#' | | |-assignment1.R
-#' | |- code
-#' | | | -plsc30600_section_1.R
-#' | |- slides
-#' ```
-#' 
-#' ## 2. Fill in your own name at the top of this file, where it says
-#' `<your name here>`.
+#' Requirements:
+#' 1. Specify a data-generating process for (X, Y) with X in {0, 1} and
+#'    Y in {0, 1}.
+#' 2. Consider three missingness mechanisms for R:
+#'    - MCAR: R is independent of (X, Y)
+#'    - MAR: R depends on X but not on Y given X
+#'    - MNAR (Missing Not at Random): R depends on Y even after conditioning
+#'      on X
+#' 3. Estimation:
+#'    - Write code that takes (Y*, R) and returns the plug-in Manski
+#'     bounds for E[Y] when Y is in [0, 1].
+#'    - Write code that computes the MCAR plug-in estimator mu_hat_MCAR.
+#'    - Write code that computes the MAR plug-in estimator mu_hat_MAR by
+#'    stratification on X in {A, B}.
 #'
-#' ## 3. Set up Claude (optional).
-#' If you plan to use Claude Code, follow the instructions in
-#' `code/Install Claude Code...`.
-#'
-#' ## 4. Compile this script from the correct location.
-#' Open this file from the local repo and "spin" it to PDF.
-#' In RStudio, click Knit/Spin to produce the PDF.
-
-#' Working directory (should be the `code/` folder in the course repository):
-getwd()
-
-#' Full recursive listing of files in the folder.
-print(list.files(".", recursive = TRUE))
-
-#' Parent directory (one level up) to show the repo sits in the expected place.
-print(list.files("..", all.files = FALSE))
-
-# 3) If you will be using Claude Code:
-#' Claude version (optional):
-#' Output should be something like `## 2.0.76 (Claude Code)`
-if (nzchar(Sys.which("claude"))) {
-  cat(system("claude --version", intern = TRUE), sep = "\n")
-} else {
-  cat("Claude not found on PATH.\n")
-}
-
+#' 3. For each mechanism, run at least S = 500 simulated datasets
+#'    (choose n >= 200).
+#' 4. For each mechanism and estimator, report:
+#'    - empirical bias (average estimate minus true mu)
+#'    - empirical variance
+#'    - at least one figure (e.g., histograms/boxplots of estimates, or
+#'      bias/variance summaries)
+#' 5. For Manski bounds, also report the fraction of simulations in which the
+#'    true mu lies inside the sample plug-in bounds (and briefly comment on
+#'    what you see).
