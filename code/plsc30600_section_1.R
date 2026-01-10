@@ -7,7 +7,7 @@
 #'
 #'
 #' Requirements:
-#' 1. Specify a data-generating process for (X, Y) with X in {0, 1} and
+#' 1. Specify a data-generating process for (X, Y) with X in {A, B, C, D} and
 #'    Y in {0, 1}.
 #' 2. Consider three missingness mechanisms for R:
 #'    - MCAR: R is independent of (X, Y)
