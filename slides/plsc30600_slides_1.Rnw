@@ -518,7 +518,8 @@ the strength of the assumptions maintained.
 \item $Y_i \perp R_i$ (independence of outcome and response).\pause
 \item $\Pr[R_i=1] > 0$ (nonzero probability of response).\pause
 \end{wideitemize}
-\item This is a \textit{statistical assumption.}
+\item Note: implicitly, MCAR is with respect to \textit{all} data, observed and unobserved. 
+So, $R_i \perp (Y_i, X_i, Z_i, \dots )$. 
 \end{wideitemize}
 \end{frame}
 
@@ -695,8 +696,8 @@ $i$ & $Y_i(0)$ & \textcolor{Violator1}{$R_i$} & \textcolor{Violator1}{$\widehat{
 \[
 \widehat{\E}[Y_i \mid R_i=1, X_i=x]
 =
-\frac{\sum_{i=1}^n Y_i^* R_i \cdot \mathbbm{1}(X_i=x)}
-{\sum_{i=1}^n R_i \cdot \mathbbm{1}(X_i=x)}
+\frac{\sum_{i=1}^n Y_i^* R_i \mathbbm{1}(X_i=x)}
+{\sum_{i=1}^n R_i \mathbbm{1}(X_i=x)}
 \]
 
 \end{frame}

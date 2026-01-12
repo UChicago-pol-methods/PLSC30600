@@ -1,0 +1,942 @@
+% !Rnw weave = Sweave
+\documentclass[xcolor={dvipsnames}]{beamer}
+
+\RequirePackage{../assets/pres-template_MOW}
+\usepackage{colortbl}
+
+%--------------------------------------------------------------------------
+% Specific to this document ---------------------------------------
+
+%--------------------------------------------------------------------------
+% \setbeamercovered{transparent}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setlength{\tabcolsep}{1.3pt}
+\title{PLSC 30600}
+\subtitle{Week 2: Identification, ignorability, and propensity scores}
+\date{Winter 2026}
+\author{Molly Offer-Westort}
+\institute{Department of Political Science, \\University of Chicago}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+%-------------------------------------------------------------------------------%
+\frame{\titlepage
+\thispagestyle{empty}
+}
+%-------------------------------------------------------------------------------%
+\begin{frame}{Recap MCAR: Missing Completely at Random}
+
+\begin{wideitemize}
+\item Let $Y_i$ and $R_i$ be random variables with $\Supp[R_i]=\{0,1\}$.\pause
+\item Let $Y_i^* = Y_i R_i + (-99)(1 - R_i)$.\pause
+\item $Y_i$ is MCAR if:\pause
+\begin{wideitemize}
+\item $Y_i \perp R_i$ (independence of outcome and response).\pause
+\item $\Pr[R_i=1] > 0$ (nonzero probability of response).\pause
+\end{wideitemize}
+\item Note: implicitly, MCAR is with respect to \textit{all} data, observed and unobserved. 
+So, $R_i \perp (Y_i, X_i, Z_i, \dots )$. 
+\end{wideitemize}
+\end{frame}
+
+%%%%%NOTE%%%%%
+\note{
+\scriptsize \singlespacing
+
+\begin{wideitemize}
+\item Emphasize MCAR is rare outside randomized nonresponse.
+\end{wideitemize}
+
+}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}{Missingness wrt the full data}
+
+\begin{definition}[Full data, observed data, and response indicator]
+Let $U_i$ denote the \emph{full-data} random vector for unit $i$, and let
+$R_i\in\{0,1\}$ indicate whether the outcome component $Y_i$ of $U_i$ is observed.
+Write $U_i=(Y_i,X_i)$ where $X_i$ collects all covariates measured (or conceptually present) for unit $i$.
+We observe
+\[
+Y_i^\ast = Y_i R_i + (-99)(1-R_i).
+\]
+\end{definition}
+
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}{MCAR: Missing Completely at Random}
+
+\begin{definition}[Missing Completely at Random (MCAR)]
+Let $U_i=(Y_i,\X_i)$ be the full-data vector and let $R_i\in\{0,1\}$ be the response indicator.
+We say $Y_i$ is \emph{missing completely at random} if the following conditions hold:
+\begin{enumerate}
+\item $R_i \perp\!\!\!\perp U_i$ \quad (missingness is independent of the full data),
+\item $\Pr(R_i=1)>0$ \quad (nonzero probability of response).
+\end{enumerate}
+Equivalently, $R_i \perp\!\!\!\perp (Y_i,X_i)$ and $\Pr(R_i=1)>0$.
+\end{definition}
+
+\end{frame}
+%-------------------------------------------------------------------------------%
+
+\begin{frame}{MAR: Missing at Random}
+
+\begin{definition}[Missing at Random (MAR)]
+Let $U_i=(Y_i,X_i)$ be the full-data vector and let $R_i\in\{0,1\}$ be the response indicator.
+We observe $X_i$ for all units (even when $R_i=0$).
+We say $Y_i$ is \emph{missing at random conditional on $X_i$} if the following conditions hold:
+\begin{enumerate}
+\item $R_i \perp\!\!\!\perp Y_i \mid X_i$ \quad (conditional independence of missingness and outcome),
+\item $\exists\,\varepsilon>0$ such that $\Pr(R_i=1\mid X_i)>\varepsilon$ a.s.\quad (positivity).
+\end{enumerate}
+\end{definition}
+
+
+\begin{proposition}[MCAR implies MAR]
+If $R_i \perp\!\!\!\perp (Y_i,X_i)$, then $R_i \perp\!\!\!\perp Y_i\mid X_i$.
+Therefore, MCAR implies MAR (with the same positivity condition).
+\end{proposition}
+
+
+\end{frame}
+%-------------------------------------------------------------------------------%
+\begin{frame}{Recap: missing data \textrightarrow{} potential outcomes}
+
+\begin{wideitemize}
+\item Potential outcomes: $Y_i(1)$ and $Y_i(0)$.\pause
+\item Observed outcome: $Y_i = Y_i(d): \quad D_i = d$.\pause
+\item Only one potential outcome is observed; the other is missing.\pause
+\item Identification requires assumptions about the assignment mechanism.
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Recap: \cite{manski-nagin_1998} Utah juvenile court data}
+
+\begin{wideitemize}
+\item How should judges sentence convicted juvenile offenders?\pause
+\item Juvenile offenders in Utah may be assigned to residential or non-residential treatment programs.
+\[
+\text{Treatment (sentencing): } D=1 \text{ residential, } D=0 \text{ non-residential}
+\]
+\[
+\text{Outcome (recidivism): } Y=1 \text{ recidivates, } Y=0 \text{ does not recidivate }
+\]
+\end{wideitemize}
+\end{frame}
+
+%%%%%NOTE%%%%%
+\note{
+\scriptsize \singlespacing
+
+\begin{wideitemize}
+\item xxx
+\end{wideitemize}
+
+}
+\begin{frame}{Random assignment}
+\begin{wideitemize}
+\item Let $Y_i(0)$, $Y_i(1)$, and $D_i$ be random variables with $\Supp[D_i]=\{0,1\}$.\pause
+\item Let $Y_i = Y_i(1) D_i + Y_i(0) (1-D_i)$.\pause
+\item $D_i$ is \textbf{randomly assigned} if:\pause
+\begin{wideitemize}
+\item $(Y_i(0), Y_i(1)) \perp D_i$ (independence of potential outcomes and treatment).\pause
+\item $0 < \Pr[D_i=1] < 1$ (positivity).\pause
+\end{wideitemize}
+\item Under this assumption, $\E[\tau_i]$ is point identified. \pause
+\item Aside: Does this independence need to hold for the full data? \pause
+\item Implicitly: $R_i \perp\!\!\!\perp U_i^{pre}$ \quad (missingness is independent of the full pre-intervention data)
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{ATE under random assignment}
+\begin{wideitemize}
+\item If $D_i$ is randomly assigned, then:\pause
+\end{wideitemize}
+\[
+\E\!\bigl[Y_i(1)\bigr] = \E\!\bigl[Y_i \mid D_i=1\bigr], \quad
+\E\!\bigl[Y_i(0)\bigr] = \E\!\bigl[Y_i \mid D_i=0\bigr].
+\]
+\[
+\E[\tau_i] = \E\!\bigl[Y_i \mid D_i=1\bigr] - \E\!\bigl[Y_i \mid D_i=0\bigr].
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Difference-in-means estimator}
+\begin{wideitemize}
+\item Plug-in estimator under random assignment:\pause
+\end{wideitemize}
+\[
+\widehat{\E}[\tau_i] = 
+\frac{\sum_{i=1}^n Y_i  D_i}{\sum_{i=1}^n D_i}
+-\frac{\sum_{i=1}^n Y_i  (1- D_i)}{\sum_{i=1}^n (1- D_i)}.
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Difference-in-means estimator (matrix form)}
+\begin{wideitemize}
+\item Let
+\[
+\Y=
+\begin{bmatrix}
+Y_1\\
+Y_2\\
+\vdots\\
+Y_n
+\end{bmatrix},
+\quad
+\D=
+\begin{bmatrix}
+D_1\\
+D_2\\
+\vdots\\
+D_n
+\end{bmatrix},
+\quad
+\one=
+\begin{bmatrix}
+1\\
+1\\
+\vdots\\
+1
+\end{bmatrix}.
+\]\pause
+\item Let $n_1=\one^\top \D$ and $n_0=\one^\top(\one-\D)$. \pause
+ Mechanically,
+\[
+n_1=
+\begin{bmatrix}
+1 & 1 & \cdots & 1
+\end{bmatrix}
+\begin{bmatrix}
+D_1\\
+D_2\\
+\vdots\\
+D_n
+\end{bmatrix}
+=\sum_{i=1}^n 1  D_i,
+\]
+\[
+n_0=
+\begin{bmatrix}
+1 & 1 & \cdots & 1
+\end{bmatrix}
+\begin{bmatrix}
+1-D_1\\
+1-D_2\\
+\vdots\\
+1-D_n
+\end{bmatrix}
+=\sum_{i=1}^n 1  (1-D_i).
+\]
+\end{wideitemize}
+\end{frame}
+%-------------------------------------------------------------------------------%
+\begin{frame}{Difference-in-means estimator (matrix form)}
+\[
+\widehat{\E}[\tau_i]
+= \left(\frac{\D}{n_1}-\frac{\one-\D}{n_0}\right)^\top \Y
+\pause \qquad
+\left(\frac{\D}{n_1}-\frac{\one-\D}{n_0}\right) = 
+\begin{bmatrix}
+\frac{D_1}{n_1}-\frac{1-D_1}{n_0}\\
+\frac{D_2}{n_1}-\frac{1-D_2}{n_0}\\
+\vdots\\
+\frac{D_n}{n_1}-\frac{1-D_n}{n_0}
+\end{bmatrix}
+\]\pause
+
+\[
+\widehat{\E}[\tau_i]
+= \begin{bmatrix}
+\frac{D_1}{n_1}-\frac{1-D_1}{n_0}, 
+\frac{D_2}{n_1}-\frac{1-D_2}{n_0}, 
+\cdots, 
+\frac{D_n}{n_1}-\frac{1-D_n}{n_0}
+\end{bmatrix}
+\begin{bmatrix}
+Y_1\\
+Y_2\\
+\vdots\\
+Y_n
+\end{bmatrix}
+\]\pause
+\[
+= \sum_{i=1}^n \left(\frac{D_i}{n_1}-\frac{1-D_i}{n_0}\right)Y_i
+= \frac{1}{n_1}\sum_{i=1}^n D_i Y_i - \frac{1}{n_0}\sum_{i=1}^n (1-D_i) Y_i
+\]
+\[
+= \frac{\sum_{i=1}^n Y_i  D_i}{\sum_{i=1}^n D_i}
+-\frac{\sum_{i=1}^n Y_i  (1- D_i)}{\sum_{i=1}^n (1- D_i)}.
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Utah example: random assignment intuition}
+
+\begin{wideitemize}
+\item Treat $D_i$ as randomly assigned to residential vs.\ non-residential.\pause
+\item Then treated and control groups have the same potential outcome distributions.\pause
+\item Sample means within $D=1$ and $D=0$ identify $\E[Y_i(1)]$ and $\E[Y_i(0)]$.
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[shrink=14]{Science table: random assignment}
+
+What would the difference in recidivism rates be if all juveniles were assigned to residential instead of non-residential treatment?
+
+\vspace{0.75em}
+
+Target: $\E[Y_i(1)] - \E[Y_i(0)]$
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c}
+$i$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+1 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+2 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+3 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+4 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+5 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+6 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+7 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+8 & \textcolor{red!40}{?} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+9 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+10 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+\end{tabular}
+\end{table}
+
+\vspace{0.3cm}
+\[
+\widehat{\E}[Y_i(1)] = \frac{1+1+1+0+1}{5} = 0.8, \quad
+\widehat{\E}[Y_i(0)] = \frac{0+1+0+1+1}{5} = 0.6
+\]
+\[
+\widehat{\E}[\tau_i] = 0.8 - 0.6 = 0.2
+\]
+
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Strong ignorability}
+\begin{wideitemize}
+\item Let $Y_i(0)$, $Y_i(1)$, and $D_i$ be random variables with $\Supp[D_i]=\{0,1\}$.\pause
+\item Let $Y_i = Y_i(1) D_i + Y_i(0) (1-D_i)$.\pause
+\item $D_i$ is \textbf{strongly ignorable conditional on $X_i$} if:\pause
+\begin{wideitemize}
+\item $(Y_i(0), Y_i(1)) \perp D_i \mid X_i$ (conditional independence).\pause
+\item $\exists \varepsilon > 0$ such that $\varepsilon < \Pr[D_i=1 \mid X_i] < 1-\varepsilon$ (positivity).\pause
+\end{wideitemize}
+\item Random assignment implies strong ignorability (with pre‑treatment $X_i$). \pause Strong ignorability does \textit{not} imply random assignment.  
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{ATE under strong ignorability}
+\begin{wideitemize}
+\item If $D_i$ is strongly ignorable conditional on $X_i$, then:\pause
+\end{wideitemize}
+\begin{align*}
+\E[\tau_i] =
+ & \sum_{x} \E\!\bigl[Y_i \mid D_i=1, X_i=x\bigr]\Pr[X_i=x]
+-\\
+& \qquad \sum_{x} \E\!\bigl[Y_i \mid D_i=0, X_i=x\bigr]\Pr[X_i=x].
+\end{align*}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Conditional ATE under strong ignorability}
+\begin{wideitemize}
+\item For any $x \in \Supp[X_i]$:\pause
+\end{wideitemize}
+\[
+\E[\tau_i \mid X_i] =
+\E\!\bigl[Y_i \mid D_i=1, X_i\bigr] -
+\E\!\bigl[Y_i \mid D_i=0, X_i\bigr].
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Post-stratification plug-in estimator under MAR}
+\begin{wideitemize}
+\item Under MAR, $Y \perp R \mid X$, so:
+\end{wideitemize}
+\[
+\E[Y]=\sum_{x\in\Supp[X]} \E[Y \mid R=1, X=x]\Pr[X=x].
+\]\pause
+\begin{wideitemize}
+\item Sample plug-in estimator:
+\end{wideitemize}
+\[
+\widehat{\E}[Y]=\sum_{x\in\Supp[X]}
+\left(
+\frac{\sum_{i=1}^n Y_i^*\,\mathbbm{1}(R_i=1)\mathbbm{1}(X_i=x)}
+{\sum_{i=1}^n \mathbbm{1}(R_i=1)\mathbbm{1}(X_i=x)}
+\right)
+\left(
+\frac{\sum_{i=1}^n \mathbbm{1}(X_i=x)}{n}
+\right).
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[shrink=14]{Science table: ignorability (conditioning on $X$)}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c}
+$i$ & $X_i$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-4}\cmidrule(lr){5-6}
+1 & A & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+2 & A & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+3 & B & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+4 & B & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+5 & A & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+6 & A & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+7 & B & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+8 & B & \textcolor{red!40}{?} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+9 & A & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+10 & B & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+\end{tabular}
+\end{table}
+
+\vspace{0.3cm}
+\[
+\widehat{\E}[Y_i \mid D_i=1, X_i=\text{A}] = 1, \quad
+\widehat{\E}[Y_i \mid D_i=0, X_i=\text{A}] = 1/3
+\]
+\[
+\widehat{\E}[Y_i \mid D_i=1, X_i=\text{B}] = 2/3, \quad
+\widehat{\E}[Y_i \mid D_i=0, X_i=\text{B}] = 1
+\]
+\[
+\widehat{\E}[Y_i(1)] = \frac{5}{10}\cdot 1 + \frac{5}{10}\cdot \frac{2}{3} = 0.833,
+\quad
+\widehat{\E}[Y_i(0)] = \frac{5}{10}\cdot \frac{1}{3} + \frac{5}{10}\cdot 1 = 0.667
+\]
+\[
+\widehat{\E}[\tau_i] = 0.833 - 0.667 = 0.167
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Response propensity function}
+\begin{wideitemize}
+\item Suppose we observe $(R_i, X_i)$ with $\Supp[R_i]=\{0,1\}$.\pause
+\item The response propensity function is:\pause
+\end{wideitemize}
+\[
+p_R(x)=\Pr[R_i=1 \mid X_i=x], \quad \forall x \in \Supp[X_i].
+\]
+\begin{wideitemize}
+\item The random variable $p_R(X_i)$ is the (response) propensity score for unit $i$.\pause
+\item It is the conditional probability of response given covariates.
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{MAR and the propensity score}
+\begin{wideitemize}
+\item Let $Y_i$ and $R_i$ be random variables with $\Supp[R_i]=\{0,1\}$.\pause
+\item Let $Y_i^* = Y_i R_i + (-99)(1 - R_i)$ and let $X_i$ be a random vector.\pause
+\item If $Y_i$ is MAR conditional on $X_i$, then:\pause
+\begin{wideitemize}
+\item $R_i \perp X_i \mid p_R(X_i)$ (balance conditional on $p_R(X_i)$).\pause
+\item $Y_i \perp R_i \mid p_R(X_i)$ (independence of outcome and response conditional on\ $p_R(X_i)$).\pause
+\item $\exists \varepsilon > 0$ such that $\varepsilon < \Pr[R_i=1 \mid p_R(X_i)] < 1-\varepsilon$.
+\end{wideitemize}
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[shrink=14]{Science table: MAR and the propensity score}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $Y_i(0)$ & \textcolor{Violator1}{$R_i$} & \textcolor{Violator1}{$Y_i^*(0)$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-6}
+1 & A & 0 & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{-99} \\
+3 & B & 0 & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{-99} \\
+5 & A & 1 & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{-99} \\
+7 & B & 1 & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{-99} \\
+9 & A & 0 & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+10 & B & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{-99} \\
+\end{tabular}
+\end{table}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[shrink=14]{Science table: add the (empirical) propensity score}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $\widehat{p}_R(X_i)$ & $Y_i(0)$ & \textcolor{Violator1}{$R_i$} & \textcolor{Violator1}{$Y_i^*(0)$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-7}
+1 & A & 0 & \cellcolor{Contrast4l}0.67 & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \cellcolor{Contrast4l}0.67 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{-99} \\
+3 & B & 0 & \cellcolor{Contrast6l}0.50 & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \cellcolor{Contrast6l}0.50 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{-99} \\
+5 & A & 1 & \cellcolor{Contrast6l}0.50 & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \cellcolor{Contrast6l}0.50 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{-99} \\
+7 & B & 1 & \cellcolor{Contrast2l}0.33 & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \cellcolor{Contrast2l}0.33 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{-99} \\
+9 & A & 0 & \cellcolor{Contrast4l}0.67 & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+10 & B & 1 & \cellcolor{Contrast2l}0.33 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{-99} \\
+\end{tabular}
+\end{table}
+
+\vspace{0.2cm}
+\[
+\widehat{p}_R(X_i) = \frac{\sum_{i=1}^n R_i  \mathbbm{1}(X_{[1]i},X_{[2]i})}{\sum_{i=1}^n \mathbbm{1}(X_{[1]i},X_{[2]i})}
+\]
+\begin{table}[h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{c c c c}
+$X_{[1]}$ & $X_{[2]}$ & $n$ & $\widehat{p}_R$ \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-4}
+A & 0 & 3 & \cellcolor{Contrast4l}0.67 \\
+A & 1 & 2 & \cellcolor{Contrast6l}0.50 \\
+B & 0 & 2 & \cellcolor{Contrast6l}0.50 \\
+B & 1 & 3 & \cellcolor{Contrast2l}0.33 \\
+\end{tabular}
+\end{table}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Estimation with the propensity score}
+
+\vspace{0.3cm}
+\begin{align*}
+\widehat{\E}[Y_i(0)] & =
+ \textcolor{Contrast4}{\frac{3}{10}\widehat{\E}[Y_i \mid R_i=1, \widehat{p}_R(X_i)=0.67]} +\\
+& \textcolor{Contrast6}{\frac{4}{10}\widehat{\E}[Y_i \mid R_i=1, \widehat{p}_R(X_i)=0.50]} +\\
+& \textcolor{Contrast2}{\frac{3}{10}\widehat{\E}[Y_i \mid R_i=1, \widehat{p}_R(X_i)=0.33]}
+\end{align*}
+\begin{align*}
+\widehat{\E}[Y_i \mid R_i=1, \widehat{p}_R(X_i)=0.67]=\frac{1}{2},\quad
+\widehat{\E}[Y_i \mid R_i=1, \widehat{p}_R(X_i)=0.50]=\frac{1}{2},\\
+\widehat{\E}[Y_i \mid R_i=1, \widehat{p}_R(X_i)=0.33]=1 \qquad \qquad \qquad
+\end{align*}
+\[
+= \textcolor{Contrast4}{\frac{3}{10}\cdot \frac{1}{2}} + \textcolor{Contrast6}{\frac{4}{10}\cdot \frac{1}{2}} + \textcolor{Contrast2}{\frac{3}{10}\cdot 1}
+= 0.65
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}{Treatment propensity function}
+\begin{wideitemize}
+\item Let $Y_i(0)$, $Y_i(1)$, and $D_i$ be random variables with $\Supp[D_i]=\{0,1\}$.\pause
+\item Let $Y_i = Y_i(1) D_i + Y_i(0) (1-D_i)$.\pause
+\item The treatment propensity function is:\pause
+\end{wideitemize}
+\[
+p_D(x)=\Pr[D_i=1 \mid X_i=x], \quad \forall x \in \Supp[X_i].
+\]
+\begin{wideitemize}
+\item The random variable $p_D(X_i)$ is the (treatment) propensity score for unit $i$.
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Strong ignorability and the propensity score}
+\begin{wideitemize}
+\item Let $Y_i(0)$, $Y_i(1)$, and $D_i$ be random variables with $\Supp[D_i]=\{0,1\}$.\pause
+\item Let $Y_i = Y_i(1) D_i + Y_i(0) (1-D_i)$ and $\tau_i = Y_i(1)-Y_i(0)$.\pause
+\item If $D_i$ is strongly ignorable conditional on $X_i$, then:\pause
+\begin{wideitemize}
+\item $D_i \perp X_i \mid p_D(X_i)$ (balance conditional on $p_D(X_i)$).\pause
+\item $(Y_i(0), Y_i(1)) \perp D_i \mid p_D(X_i)$ (conditional independence).\pause
+\item $\exists \varepsilon > 0$ such that $\varepsilon < \Pr[D_i=1 \mid p_D(X_i)] < 1-\varepsilon$.
+\end{wideitemize}
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[shrink=14]{Science table: strong ignorability and the propensity score}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-5}\cmidrule(lr){6-7}
+1 & A & 0 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+3 & B & 0 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+5 & A & 1 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+7 & B & 1 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \textcolor{red!40}{?} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+9 & A & 0 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+10 & B & 1 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+\end{tabular}
+\end{table}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[shrink=14]{Science table: add the (empirical) propensity score}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $p_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-6}\cmidrule(lr){7-8}
+1 & A & 0 & \cellcolor{Contrast2l}0.33 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \cellcolor{Contrast2l}0.33 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+3 & B & 0 & \cellcolor{Contrast6l}0.50 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \cellcolor{Contrast6l}0.50 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+5 & A & 1 & \cellcolor{Contrast6l}0.50 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \cellcolor{Contrast6l}0.50 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+7 & B & 1 & \cellcolor{Contrast4l}0.67 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \cellcolor{Contrast4l}0.67 & \textcolor{red!40}{?} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+9 & A & 0 & \cellcolor{Contrast2l}0.33 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+10 & B & 1 & \cellcolor{Contrast4l}0.67 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+\end{tabular}
+\end{table}
+
+\vspace{0.2cm}
+\begin{table}[h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{c c c c}
+$X_{[1]}$ & $X_{[2]}$ & $n$ & $p_D(X)$ \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-4}
+A & 0 & 3 & \cellcolor{Contrast2l}0.33 \\
+A & 1 & 2 & \cellcolor{Contrast6l}0.50 \\
+B & 0 & 2 & \cellcolor{Contrast6l}0.50 \\
+B & 1 & 3 & \cellcolor{Contrast4l}0.67 \\
+\end{tabular}
+\end{table}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Estimation with the treatment propensity score}
+\scriptsize
+
+\begin{align*}
+\widehat{\E}[Y_i(1)] & =
+ \textcolor{Contrast2}{\frac{3}{10}\widehat{\E}[Y_i \mid D_i=1, \widehat{p}_D(X_i)=0.33]} +\\
+& \textcolor{Contrast6}{\frac{4}{10}\widehat{\E}[Y_i \mid D_i=1, \widehat{p}_D(X_i)=0.50]} +\\
+& \textcolor{Contrast4}{\frac{3}{10}\widehat{\E}[Y_i \mid D_i=1, \widehat{p}_D(X_i)=0.67]}
+\end{align*}
+\[
+= \textcolor{Contrast2}{\frac{3}{10}\cdot 1} + \textcolor{Contrast6}{\frac{2}{10}\cdot 1}
+ + \textcolor{Contrast6}{\frac{2}{10}\cdot 1} + \textcolor{Contrast4}{\frac{3}{10}\cdot \frac{1}{2}}
+= 0.85
+\]\pause
+\begin{align*}
+\widehat{\E}[Y_i(0)] & =
+ \textcolor{Contrast2}{\frac{3}{10}\widehat{\E}[Y_i \mid D_i=0, \widehat{p}_D(X_i)=0.33]} +\\
+& \textcolor{Contrast6}{\frac{4}{10}\widehat{\E}[Y_i \mid D_i=0, \widehat{p}_D(X_i)=0.50]} +\\
+& \textcolor{Contrast4}{\frac{3}{10}\widehat{\E}[Y_i \mid D_i=0, \widehat{p}_D(X_i)=0.67]}
+\end{align*}
+\[
+= \textcolor{Contrast2}{\frac{3}{10}\cdot 0} + \textcolor{Contrast6}{\frac{2}{10}\cdot 0}
+ + \textcolor{Contrast6}{\frac{2}{10}\cdot 1} + \textcolor{Contrast4}{\frac{3}{10}\cdot 1}
+= 0.5
+\]\pause
+\[
+\widehat{\E}[\tau_i] = 0.85 - 0.5 = 0.35
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Post-treatment variables}
+
+\begin{wideitemize}
+\item Conditioning on post‑treatment variables can break ignorability.\pause
+\item A variable affected by treatment is not a valid adjustment set.\pause
+\item DAG intuition: conditioning on descendants can open biasing paths.\pause
+\item Preview: we will formalize this with DAGs in Weeks 3–4.
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Post-treatment variables: why independence fails}
+\begin{wideitemize}
+\item Example: $D \rightarrow M \rightarrow Y$ with $M$ a post‑treatment mediator.\pause
+\item Even if $D \perp (Y(0),Y(1))$ (random assignment), $D \not\!\perp M$ because $M$ is caused by $D$.\pause
+\item Conditioning on $M$ forces treated/control units to have the same mediator value, which mixes causal pathways and changes the estimand.\pause
+\end{wideitemize}
+\[
+\Pr[M=1\mid D=1]\neq \Pr[M=1\mid D=0]
+\quad\Rightarrow\quad
+D \not\!\perp M.
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Generalized potential outcomes model}
+\begin{wideitemize}
+\item Allow multi‑valued treatments: $D_i \in \Supp[D_i]$.\pause
+\item Generalized potential outcomes: $Y_i(d)$ for each $d \in \Supp[D_i]$.\pause
+\item Switching equation: $Y_i = \sum_{d \in \Supp[D_i]} Y_i(d)\,\mathbbm{1}(D_i=d)$.\pause
+\item Preview: generalized propensity scores summarize $\Pr[D_i=d \mid X_i]$.
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Average marginal causal effect}
+\begin{wideitemize}
+\item If $Y_i(d)$ is differentiable with respect to $d$, the \textbf{average marginal causal effect} is:\pause
+\end{wideitemize}
+\[
+\mathrm{AMCE} =
+\E\!\left[\frac{\partial \E[Y_i(D_i)\mid D_i, X_i]}{\partial D_i}\right].
+\]
+\begin{wideitemize}
+\item Under conditional independence, the CEF is causal, so:\pause
+\end{wideitemize}
+\[
+\mathrm{AMCE} =
+\E\!\left[\frac{\partial \E[Y_i \mid D_i, X_i]}{\partial D_i}\right].
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{AMCE: local marginal effects}
+\centering
+\begin{tikzpicture}[x=7cm,y=4cm]
+\draw[->, line width=0.6pt] (0,0) -- (1.05,0) node[below] {$d$};
+\draw[->, line width=0.6pt] (0,0) -- (0,1.05) node[left] {$\E[Y \mid D=d, X]$};
+
+% Conditional expectation curve
+\draw[smooth, thick, color=Contrast6, domain=0:1, samples=100]
+  plot ({\x},{0.10+1.05*\x-0.7*\x*\x});
+
+\pause
+
+% Tangent segments at a few d values
+\foreach \x/\col in {0.2/Contrast2,0.5/Contrast6,0.8/Contrast4} {
+  \pgfmathsetmacro{\y}{0.10+1.05*\x-0.7*\x*\x}
+  \pgfmathsetmacro{\slope}{1.05-1.4*\x}
+  \pgfmathsetmacro{\dx}{0.4}
+  \draw[line width=1.1pt, color=\col]
+    ({\x-\dx},{\y-\slope*\dx}) -- ({\x+\dx},{\y+\slope*\dx});
+  \fill[\col] (\x,\y) circle (1.2pt);
+}
+
+\node[align=left, anchor=west] at (0.58,0.2)
+  {tangent segments \\ show local marginal effects};
+\end{tikzpicture}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{AMCE heterogeneity across covariates}
+\centering
+Local slopes vary by $X$
+\begin{tikzpicture}[x=4.4cm,y=2.8cm]
+% Panel A
+\begin{scope}[shift={(0,1.25)}]
+\draw[->, line width=0.5pt] (0,0) -- (1.05,0);
+\draw[->, line width=0.5pt] (0,0) -- (0,1.05);
+\node[anchor=south west] at (0.02,1.02) {$X=\text{A}$};
+\draw[smooth, thick, color=Contrast6, domain=0:1, samples=80]
+  plot ({\x},{0.12+0.95*\x-0.55*\x*\x});
+\foreach \x/\col in {0.2/Contrast2,0.6/Contrast6} {
+  \pgfmathsetmacro{\y}{0.12+0.95*\x-0.55*\x*\x}
+  \pgfmathsetmacro{\slope}{0.95-1.1*\x}
+  \pgfmathsetmacro{\dx}{0.3}
+  \draw[line width=0.9pt, color=\col]
+    ({\x-\dx},{\y-\slope*\dx}) -- ({\x+\dx},{\y+\slope*\dx});
+}
+\end{scope}
+
+% Panel B
+\begin{scope}[shift={(1.25,1.25)}]
+\draw[->, line width=0.5pt] (0,0) -- (1.05,0);
+\draw[->, line width=0.5pt] (0,0) -- (0,1.05);
+\node[anchor=south west] at (0.02,1.02) {$X=\text{B}$};
+\draw[smooth, thick, color=Contrast6, domain=0:1, samples=80]
+  plot ({\x},{0.08+1.10*\x-0.75*\x*\x});
+\foreach \x/\col in {0.2/Contrast2,0.6/Contrast6} {
+  \pgfmathsetmacro{\y}{0.08+1.10*\x-0.75*\x*\x}
+  \pgfmathsetmacro{\slope}{1.10-1.5*\x}
+  \pgfmathsetmacro{\dx}{0.3}
+  \draw[line width=0.9pt, color=\col]
+    ({\x-\dx},{\y-\slope*\dx}) -- ({\x+\dx},{\y+\slope*\dx});
+}
+\end{scope}
+
+% Panel C
+\begin{scope}[shift={(0,0)}]
+\draw[->, line width=0.5pt] (0,0) -- (1.05,0);
+\draw[->, line width=0.5pt] (0,0) -- (0,1.05);
+\node[anchor=south west] at (0.02,1.02) {$X=\text{C}$};
+\draw[smooth, thick, color=Contrast6, domain=0:1, samples=80]
+  plot ({\x},{0.18+0.70*\x-0.35*\x*\x});
+\foreach \x/\col in {0.2/Contrast2,0.6/Contrast6} {
+  \pgfmathsetmacro{\y}{0.18+0.70*\x-0.35*\x*\x}
+  \pgfmathsetmacro{\slope}{0.70-0.7*\x}
+  \pgfmathsetmacro{\dx}{0.3}
+  \draw[line width=0.9pt, color=\col]
+    ({\x-\dx},{\y-\slope*\dx}) -- ({\x+\dx},{\y+\slope*\dx});
+}
+\end{scope}
+
+% Panel D
+\begin{scope}[shift={(1.25,0)}]
+\draw[->, line width=0.5pt] (0,0) -- (1.05,0);
+\draw[->, line width=0.5pt] (0,0) -- (0,1.05);
+\node[anchor=south west] at (0.02,1.02) {$X=\text{D}$};
+\draw[smooth, thick, color=Contrast6, domain=0:1, samples=80]
+  plot ({\x},{0.05+1.25*\x-0.95*\x*\x});
+\foreach \x/\col in {0.2/Contrast2,0.6/Contrast6} {
+  \pgfmathsetmacro{\y}{0.05+1.25*\x-0.95*\x*\x}
+  \pgfmathsetmacro{\slope}{1.25-1.9*\x}
+  \pgfmathsetmacro{\dx}{0.3}
+  \draw[line width=0.9pt, color=\col]
+    ({\x-\dx},{\y-\slope*\dx}) -- ({\x+\dx},{\y+\slope*\dx});
+}
+\end{scope}
+
+\end{tikzpicture}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Practice: AMCE with a non-uniform treatment}
+\begin{wideitemize}
+\item Let $D \sim \mathrm{Beta}(2,2)$ on $(0,1)$ and $X \sim \mathrm{Bernoulli}(p)$, independent.
+\pause
+\item Suppose the conditional mean function is
+\[
+m(d,x) \;=\; \alpha \;+\; \beta d^{1/2} \;+\; \gamma d^2 \;+\; \eta x d.
+\]
+\pause
+\item Compute the average marginal causal effect:
+\[
+\mathrm{AMCE} \;\equiv\; \E\!\left[\frac{\partial}{\partial d} m(D,X)\right].
+\]
+\end{wideitemize}
+\pause
+\vspace{0.5em}
+\textit{Note: for $D\sim \mathrm{Beta}(2,2)$, the density is $f_D(d)=6d(1-d)$ on $(0,1)$.}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{AMCE}
+
+\textbf{Step 1: Differentiate $m(d,x)$ with respect to $d$.}
+\[
+m(d,x)=\alpha+\beta d^{1/2}+\gamma d^2+\eta x d.
+\]
+Differentiate term-by-term:
+\[
+\frac{\partial}{\partial d}m(d,x)
+= 0 + \beta \frac{1}{2} d^{-1/2} + 2\gamma d + \eta x
+= \frac{\beta}{2\sqrt d} + 2\gamma d + \eta x.
+\]\pause
+\medskip
+\textbf{Step 2: Use linearity of expectation.}
+\[
+\mathrm{AMCE}
+= \E\!\left[\frac{\beta}{2\sqrt D}+2\gamma D+\eta X\right]
+= \frac{\beta}{2}\E[D^{-1/2}] + 2\gamma \E[D] + \eta \E[X].
+\]\pause
+Since $X\sim \mathrm{Bernoulli}(p)$,
+\[
+\E[X]=p.
+\]
+
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{AMCE}
+\textbf{Step 3: Compute the needed moments for $D\sim \mathrm{Beta}(2,2)$.}
+
+\underline{Compute $\E[D]$.}
+For the Beta distribution,
+\[
+\E[D]=\frac{\alpha}{\alpha+\beta}=\frac{2}{2+2}=\frac12.
+\]\pause
+
+\underline{Compute $\E[D^{-1/2}]$.}
+\[
+\E[D^{-1/2}]
+=\int_0^1 u^{-1/2} f_D(u)\,du
+=\int_0^1 u^{-1/2} 6u(1-u)\,du
+=6\int_0^1 u^{1/2}(1-u)\,du.
+\]
+\[
+=6\int_0^1 \left(u^{1/2}-u^{3/2}\right)\,du
+=6\left(\int_0^1 u^{1/2}\,du-\int_0^1 u^{3/2}\,du\right).
+\]
+Using $\int_0^1 u^a\,du=\frac{1}{a+1}$ for $a>-1$:
+\[
+\int_0^1 u^{1/2}\,du=\frac{2}{3},
+\qquad
+\int_0^1 u^{3/2}\,du=\frac{2}{5}.
+\]
+Thus,
+\[
+\E[D^{-1/2}]
+=6\left(\frac{2}{3}-\frac{2}{5}\right)
+=\frac{8}{5}.
+\]
+\end{frame}
+%-------------------------------------------------------------------------------%
+\begin{frame}{AMCE}
+\textbf{Step 4: Substitute back into AMCE.}
+\[
+\mathrm{AMCE}
+=\frac{\beta}{2} \frac{8}{5} + 2\gamma \frac12 + \eta p
+=\frac{4}{5}\beta + \gamma + \eta p.
+\]
+
+\[
+\boxed{\mathrm{AMCE}=\frac{4}{5}\beta+\gamma+\eta p.}
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\backupbegin
+%-------------------------------------------------------------------------------%
+
+\begin{frame}[allowframebreaks]{References}
+    \bibliographystyle{apalike}
+    \bibliography{../assets/PLSC30600}
+\end{frame}
+%-------------------------------------------------------------------------------%
+\backupend
+\end{document}
