@@ -98,6 +98,7 @@ linkcolor=Contrast1
 % --- General packages -------------------------------------------------------
 \RequirePackage[utf8]{inputenc}
 \RequirePackage{amsmath,amssymb,amsfonts}
+\RequirePackage{bm}
 \RequirePackage{amsthm}
 \RequirePackage{bbm}
 \RequirePackage{array}
@@ -132,25 +133,25 @@ linkcolor=Contrast1
 \DeclareMathOperator*{\argmin}{\arg\!\min}
 \DeclareMathOperator*{\argmax}{\textrm{arg}\,\textrm{max}}
 
-\newcommand{\A}{\mathbf{A}}\newcommand{\B}{\mathbf{B}}\newcommand{\C}{\mathbf{C}}
-\newcommand{\D}{\mathbf{D}}\newcommand{\F}{\mathbf{F}}\newcommand{\G}{\mathbf{G}}
-\newcommand{\HB}{\mathbf{H}}\newcommand{\I}{\mathbf{I}}\newcommand{\J}{\mathbf{J}}
-\newcommand{\K}{\mathbf{K}}\newcommand{\Lb}{\mathbf{L}}\newcommand{\M}{\mathbf{M}}
-\newcommand{\NB}{\mathbf{N}}\newcommand{\OB}{\mathbf{O}}\newcommand{\PB}{\mathbf{P}}
-\newcommand{\Q}{\mathbf{Q}}\newcommand{\R}{\mathbf{R}}\newcommand{\SB}{\mathbf{S}}
-\newcommand{\T}{\mathbf{T}}\newcommand{\U}{\mathbf{U}}\newcommand{\VB}{\mathbf{V}}
-\newcommand{\W}{\mathbf{W}}\newcommand{\X}{\mathbf{X}}\newcommand{\Y}{\mathbf{Y}}
-\newcommand{\Z}{\mathbf{Z}}
+\newcommand{\A}{\bm{A}}\newcommand{\B}{\bm{B}}\newcommand{\C}{\bm{C}}
+\newcommand{\D}{\bm{D}}\newcommand{\F}{\bm{F}}\newcommand{\G}{\bm{G}}
+\newcommand{\HB}{\bm{H}}\newcommand{\I}{\bm{I}}\newcommand{\J}{\bm{J}}
+\newcommand{\K}{\bm{K}}\newcommand{\Lb}{\bm{L}}\newcommand{\M}{\bm{M}}
+\newcommand{\NB}{\bm{N}}\newcommand{\OB}{\bm{O}}\newcommand{\PB}{\bm{P}}
+\newcommand{\Q}{\bm{Q}}\newcommand{\R}{\bm{R}}\newcommand{\SB}{\bm{S}}
+\newcommand{\T}{\bm{T}}\newcommand{\U}{\bm{U}}\newcommand{\VB}{\bm{V}}
+\newcommand{\W}{\bm{W}}\newcommand{\X}{\bm{X}}\newcommand{\Y}{\bm{Y}}
+\newcommand{\Z}{\bm{Z}}
 
-\newcommand{\aB}{\mathbf{a}}\newcommand{\bB}{\mathbf{b}}\newcommand{\cB}{\mathbf{c}}
-\newcommand{\dB}{\mathbf{d}}\newcommand{\e}{\mathbf{e}}\newcommand{\f}{\mathbf{f}}
-\newcommand{\g}{\mathbf{g}}\newcommand{\h}{\mathbf{h}}\newcommand{\iB}{\mathbf{i}}
-\newcommand{\jB}{\mathbf{j}}\newcommand{\kB}{\mathbf{k}}\newcommand{\lB}{\mathbf{l}}
-\newcommand{\m}{\mathbf{m}}\newcommand{\n}{\mathbf{n}}\newcommand{\oB}{\mathbf{o}}
-\newcommand{\p}{\mathbf{p}}\newcommand{\q}{\mathbf{q}}\newcommand{\rB}{\mathbf{r}}
-\newcommand{\s}{\mathbf{s}}\newcommand{\tB}{\mathbf{t}}\newcommand{\uB}{\mathbf{u}}
-\newcommand{\vB}{\mathbf{v}}\newcommand{\w}{\mathbf{w}}\newcommand{\x}{\mathbf{x}}
-\newcommand{\y}{\mathbf{y}}\newcommand{\z}{\mathbf{z}}
+\newcommand{\aB}{\bm{a}}\newcommand{\bB}{\bm{b}}\newcommand{\cB}{\bm{c}}
+\newcommand{\dB}{\bm{d}}\newcommand{\e}{\bm{e}}\newcommand{\f}{\bm{f}}
+\newcommand{\g}{\bm{g}}\newcommand{\h}{\bm{h}}\newcommand{\iB}{\bm{i}}
+\newcommand{\jB}{\bm{j}}\newcommand{\kB}{\bm{k}}\newcommand{\lB}{\bm{l}}
+\newcommand{\m}{\bm{m}}\newcommand{\n}{\bm{n}}\newcommand{\oB}{\bm{o}}
+\newcommand{\p}{\bm{p}}\newcommand{\q}{\bm{q}}\newcommand{\rB}{\bm{r}}
+\newcommand{\s}{\bm{s}}\newcommand{\tB}{\bm{t}}\newcommand{\uB}{\bm{u}}
+\newcommand{\vB}{\bm{v}}\newcommand{\w}{\bm{w}}\newcommand{\x}{\bm{x}}
+\newcommand{\y}{\bm{y}}\newcommand{\z}{\bm{z}}
 
 \def\AA{{\mathbb A}}\def\BB{{\mathbb B}}\def\CC{{\mathbb C}}
 \def\DD{{\mathbb D}}\def\EE{{\mathbb E}}\def\FF{{\mathbb F}}
@@ -179,8 +180,9 @@ linkcolor=Contrast1
 \newcommand{\bgamma}{\boldsymbol{\gamma}}
 \newcommand{\bpi}{\boldsymbol{\pi}}
 \newcommand{\arrowp}{\stackrel{p}{\rightarrow}}
-\newcommand{\0}{\mathbf{0}}
-\newcommand{\bP}{\mathbf{P}}
+\newcommand{\0}{\bm{0}}
+\newcommand{\bP}{\bm{P}}
+\newcommand{\one}{\bm{\mathbbm{1}}}
 
 \newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}
 \def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}

@@ -1,5 +1,5 @@
 % !Rnw weave = Sweave
-\documentclass[xcolor={dvipsnames}]{beamer}
+\documentclass[xcolor={dvipsnames}, handout]{beamer}
 
 \RequirePackage{../assets/pres-template_MOW}
 
@@ -80,7 +80,7 @@ Link to \href{https://github.com/UChicago-pol-methods/PLSC30600}{course repo}.
 \begin{wideitemize}
 \item We treat observations as draws from a joint generating process.\pause
 \item Observations are i.i.d.: \textit{independent and identically distributed}.\pause
-\item We index realized values with $i$---the generating distribution is the same for each unit, the realized values may not be not.\pause
+\item We index realized values with $i$---the generating distribution is the same for each unit, the realized values may not be.\pause
 \item Intuition: a large population, we randomly draw individuals one at a time.
 \end{wideitemize}
 \end{frame}
@@ -965,13 +965,13 @@ $i$ & $Y_i(1)$ & \textcolor{Violator1}{$R_i$} & \textcolor{Violator1}{$\hat Y_i(
 %-------------------------------------------------------------------------------%
 \begin{frame}{ATE bounds from potential outcomes}
 
-We already have $\E[Y_i(0)] \in [0.3, 0.8]$. From the tables above,
+We already have $\widehat\E[Y_i(0)] \in [0.3, 0.8]$. From the tables above,
 \[
-\E[Y_i(1)] \in [0.4, 0.9].
+\widehat\E[Y_i(1)] \in [0.4, 0.9].
 \]
 Therefore,
 \begin{align*}
-\E[\tau_i]  = \E[Y_i(1)] - \E[Y_i(0)] \in & [\overline{Y^L_i}(1)-\overline{Y^U_i}(0),\; \overline{Y^U_i}(1)-\overline{Y^L_i}(0)] \\
+\widehat \E[\tau_i]  = \widehat\E[Y_i(1)] - \widehat\E[Y_i(0)] \in & [\overline{Y^L_i}(1)-\overline{Y^U_i}(0),\; \overline{Y^U_i}(1)-\overline{Y^L_i}(0)] \\
 & = [0.4-0.8,\; 0.9-0.3] \\
 & = [-0.4, 0.6].
 \end{align*}
