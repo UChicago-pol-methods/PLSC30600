@@ -37,7 +37,7 @@
 \item $\Pr[R_i=1] > 0$ (nonzero probability of response).\pause
 \end{wideitemize}
 \item Note: implicitly, MCAR is with respect to \textit{all} data, observed and unobserved. 
-So, $R_i \perp (Y_i, X_i, Z_i, \dots )$. 
+So, $R_i \perp (Y_i\textcolor{gray}{, X_i, \dots Z_i, \dots )}$. 
 \end{wideitemize}
 \end{frame}
 
@@ -72,7 +72,7 @@ Y_i^\ast = Y_i R_i + (-99)(1-R_i).
 \begin{frame}{MCAR: Missing Completely at Random}
 
 \begin{definition}[Missing Completely at Random (MCAR)]
-Let $U_i=(Y_i,\X_i)$ be the full-data vector and let $R_i\in\{0,1\}$ be the response indicator.
+Let $U_i=(Y_i,X_i)$ be the full-data vector and let $R_i\in\{0,1\}$ be the response indicator.
 We say $Y_i$ is \emph{missing completely at random} if the following conditions hold:
 \begin{enumerate}
 \item $R_i \perp\!\!\!\perp U_i$ \quad (missingness is independent of the full data),
@@ -87,7 +87,7 @@ Equivalently, $R_i \perp\!\!\!\perp (Y_i,X_i)$ and $\Pr(R_i=1)>0$.
 \begin{frame}{MAR: Missing at Random}
 
 \begin{definition}[Missing at Random (MAR)]
-Let $U_i=(Y_i,X_i)$ be the full-data vector and let $R_i\in\{0,1\}$ be the response indicator.
+Let $Y_i$ and $R_i$ be random variables and let $R_i\in\{0,1\}$ be the response indicator.
 We observe $X_i$ for all units (even when $R_i=0$).
 We say $Y_i$ is \emph{missing at random conditional on $X_i$} if the following conditions hold:
 \begin{enumerate}
@@ -739,7 +739,7 @@ D \not\!\perp M.
 \centering
 \begin{tikzpicture}[x=7cm,y=4cm]
 \draw[->, line width=0.6pt] (0,0) -- (1.05,0) node[below] {$d$};
-\draw[->, line width=0.6pt] (0,0) -- (0,1.05) node[left] {$\E[Y \mid D=d, X]$};
+\draw[->, line width=0.6pt] (0,0) -- (0,1.05) node[left] {$\E[Y(D) \mid D, X=x]$};
 
 % Conditional expectation curve
 \draw[smooth, thick, color=Contrast6, domain=0:1, samples=100]
@@ -841,7 +841,7 @@ Local slopes vary by $X$
 \pause
 \item Suppose the conditional mean function is
 \[
-m(d,x) \;=\; \alpha \;+\; \beta d^{1/2} \;+\; \gamma d^2 \;+\; \eta x d.
+m(d,x) \;=\; \alpha \;+\; \beta d \;+\; \gamma d^2 \;+\; \eta x d.
 \]
 \pause
 \item Compute the average marginal causal effect:
@@ -849,9 +849,6 @@ m(d,x) \;=\; \alpha \;+\; \beta d^{1/2} \;+\; \gamma d^2 \;+\; \eta x d.
 \mathrm{AMCE} \;\equiv\; \E\!\left[\frac{\partial}{\partial d} m(D,X)\right].
 \]
 \end{wideitemize}
-\pause
-\vspace{0.5em}
-\textit{Note: for $D\sim \mathrm{Beta}(2,2)$, the density is $f_D(d)=6d(1-d)$ on $(0,1)$.}
 \end{frame}
 
 %-------------------------------------------------------------------------------%
@@ -859,20 +856,20 @@ m(d,x) \;=\; \alpha \;+\; \beta d^{1/2} \;+\; \gamma d^2 \;+\; \eta x d.
 
 \textbf{Step 1: Differentiate $m(d,x)$ with respect to $d$.}
 \[
-m(d,x)=\alpha+\beta d^{1/2}+\gamma d^2+\eta x d.
+m(d,x)=\alpha+\beta d+\gamma d^2+\eta x d.
 \]
 Differentiate term-by-term:
 \[
 \frac{\partial}{\partial d}m(d,x)
-= 0 + \beta \frac{1}{2} d^{-1/2} + 2\gamma d + \eta x
-= \frac{\beta}{2\sqrt d} + 2\gamma d + \eta x.
+= 0 + \beta + 2\gamma d + \eta x
+= \beta + 2\gamma d + \eta x.
 \]\pause
 \medskip
 \textbf{Step 2: Use linearity of expectation.}
 \[
 \mathrm{AMCE}
-= \E\!\left[\frac{\beta}{2\sqrt D}+2\gamma D+\eta X\right]
-= \frac{\beta}{2}\E[D^{-1/2}] + 2\gamma \E[D] + \eta \E[X].
+= \E\!\left[\beta+2\gamma D+\eta X\right]
+= \beta + 2\gamma \E[D] + \eta \E[X].
 \]\pause
 Since $X\sim \mathrm{Bernoulli}(p)$,
 \[
@@ -883,36 +880,21 @@ Since $X\sim \mathrm{Bernoulli}(p)$,
 
 %-------------------------------------------------------------------------------%
 \begin{frame}{AMCE}
-\textbf{Step 3: Compute the needed moments for $D\sim \mathrm{Beta}(2,2)$.}
+\textbf{Step 3: Compute the needed moment for $D\sim \mathrm{Beta}(2,2)$.}
+
+\begin{figure}
+\centering
+\includegraphics[width = 0.8\textwidth]{../assets/wiki_beta.png}
+\end{figure}
+\end{frame}
+%-------------------------------------------------------------------------------%\begin{frame}{AMCE}
+\begin{frame}{AMCE}
+\textbf{Step 3: Compute the needed moment for $D\sim \mathrm{Beta}(2,2)$.}
 
 \underline{Compute $\E[D]$.}
 For the Beta distribution,
 \[
 \E[D]=\frac{\alpha}{\alpha+\beta}=\frac{2}{2+2}=\frac12.
-\]\pause
-
-\underline{Compute $\E[D^{-1/2}]$.}
-\[
-\E[D^{-1/2}]
-=\int_0^1 u^{-1/2} f_D(u)\,du
-=\int_0^1 u^{-1/2} 6u(1-u)\,du
-=6\int_0^1 u^{1/2}(1-u)\,du.
-\]
-\[
-=6\int_0^1 \left(u^{1/2}-u^{3/2}\right)\,du
-=6\left(\int_0^1 u^{1/2}\,du-\int_0^1 u^{3/2}\,du\right).
-\]
-Using $\int_0^1 u^a\,du=\frac{1}{a+1}$ for $a>-1$:
-\[
-\int_0^1 u^{1/2}\,du=\frac{2}{3},
-\qquad
-\int_0^1 u^{3/2}\,du=\frac{2}{5}.
-\]
-Thus,
-\[
-\E[D^{-1/2}]
-=6\left(\frac{2}{3}-\frac{2}{5}\right)
-=\frac{8}{5}.
 \]
 \end{frame}
 %-------------------------------------------------------------------------------%
@@ -920,12 +902,12 @@ Thus,
 \textbf{Step 4: Substitute back into AMCE.}
 \[
 \mathrm{AMCE}
-=\frac{\beta}{2} \frac{8}{5} + 2\gamma \frac12 + \eta p
-=\frac{4}{5}\beta + \gamma + \eta p.
+=\beta + 2\gamma \frac12 + \eta p
+=\beta + \gamma + \eta p.
 \]
 
 \[
-\boxed{\mathrm{AMCE}=\frac{4}{5}\beta+\gamma+\eta p.}
+\boxed{\mathrm{AMCE}=\beta+\gamma+\eta p.}
 \]
 \end{frame}
 

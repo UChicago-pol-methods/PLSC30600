@@ -1,6 +1,6 @@
 ## Week 2 Exercise: Post-stratification plug-in under MAR
 ##  (1) Stratify on ALL covariates X
-##  (2) Stratify on estimated propensity score e_hat(X)
+##  (2) Stratify on estimated true propensity score
 
 set.seed(30600)
 library(dplyr)
@@ -21,7 +21,7 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73",
                "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 ## ---------------------------------------------------------
-## 0) Simulate an observational study with known truth
+## 0) Simulate an experimental study with known truth
 ##    (Discrete covariates so post-stratification is literal)
 ## ---------------------------------------------------------
 n  <- 5000
@@ -90,7 +90,7 @@ ate_post_X <- E1_X - E0_X
 ## Same plug-in logic:
 ##   E[Y(1)] = sum_s E[Y | d=1, S=s] * P(S=s)
 ## ---------------------------------------------------------
-#ps_mod <- glm(d ~ x1 + x2 + x3, family = binomial(), data = dat)
+#ps_est <- glm(d ~ x1 + x2 + x3, family = binomial(), data = dat)
 
 w_S  <- prop.table(table(dat$e_true))                 # P(S=s) plug-in
 m1_S <- tapply(dat$y[dat$d==1], dat$e_true[dat$d==1], mean)  # E[Y | d=1, S=s]
@@ -102,7 +102,7 @@ m1    <- m1_S[all_s]
 m0    <- m0_S[all_s]
 w     <- as.numeric(w_S); names(w) <- all_s
 
-# Keep only strata with both treated and control in sample (sample-positivity check)
+# Keep only strata with both treated and control in sample (empirical positivity check)
 ok <- !is.na(m1) & !is.na(m0)
 mass_ok <- sum(w[ok])
 

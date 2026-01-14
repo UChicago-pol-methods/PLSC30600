@@ -519,7 +519,7 @@ the strength of the assumptions maintained.
 \item $\Pr[R_i=1] > 0$ (nonzero probability of response).\pause
 \end{wideitemize}
 \item Note: implicitly, MCAR is with respect to \textit{all} data, observed and unobserved. 
-So, $R_i \perp (Y_i, X_i, Z_i, \dots )$. 
+So, $R_i \perp (Y_i\textcolor{gray}{, X_i, Z_i, \dots })$. 
 \end{wideitemize}
 \end{frame}
 
