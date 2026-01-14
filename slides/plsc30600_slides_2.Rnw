@@ -1,5 +1,5 @@
 % !Rnw weave = Sweave
-\documentclass[xcolor={dvipsnames}]{beamer}
+\documentclass[xcolor={dvipsnames}, handout]{beamer}
 
 \RequirePackage{../assets/pres-template_MOW}
 \usepackage{colortbl}
