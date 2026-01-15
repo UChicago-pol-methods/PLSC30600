@@ -18,7 +18,7 @@ prop.table(table(dat$turf, dat$treatmen), margin = 1)
 # recode to Ys and Ds
 dat <- dat |> 
   mutate(
-    y = voted00,
+    y = voted01,
     d = ifelse(treatmen == "Treatment", 1, 0)
   )
 
