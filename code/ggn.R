@@ -5,7 +5,7 @@
 # replication data here: https://isps.yale.edu/research/data/d017
 library(dplyr)
 
-dat <- read.csv("../data/GreenGerberNickerson_JP_2003-1_EDITED.csv")
+dat <- read.csv("../data/green-et-al_2003.csv")
 dat <- dat |> 
   filter(city == "Raleigh")
 
@@ -18,8 +18,8 @@ prop.table(table(dat$turf, dat$treatmen), margin = 1)
 # recode to Ys and Ds
 dat <- dat |> 
   mutate(
-    y = voted01,
-    d = ifelse(treatmen == "Treatment", 1, 0)
+    y = 1*(voted01=="Voted"),
+    d = 1*(treatmen == "Treatment")
   )
 
 # generate p_score
