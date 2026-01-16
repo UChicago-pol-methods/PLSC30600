@@ -1,0 +1,74 @@
+---
+title: "plsc30600_w2_ggn"
+author: "your name here"
+date: "2026-01-16"
+output: html_document
+---
+
+Reference: Green, Donald P., Alan S. Gerber, and David W. Nickerson. " Getting out the
+vote in local elections: Results from six door-to-door canvassing experiments."
+The Journal of Politics 65.4 (2003): 1083-1096.
+doi: https://doi.org/10.1111/1468-2508.t01-1-00126
+
+Download replication data and data dictionary here: https://isps.yale.edu/research/data/d017
+
+# Data Prep
+
+```{r}
+library(dplyr)
+
+dat <- read.csv("/Users/maggiewang/Desktop/causal TA/sections/w2/green-et-al_2003.csv")
+dat <- dat |> 
+  filter(city == "Raleigh")
+```
+
+```{r}
+# Check that the treatment and control are unequal
+table(dat$treatmen) # yes, it's missing a 't'
+
+# Note that the differences are due to different treatment assignments across "turfs"
+prop.table(table(dat$turf, dat$treatmen), margin = 1)
+```
+
+```{r}
+# recode to Ys and Ds
+dat <- dat |> 
+  mutate(
+    y = 1*(voted01=="Voted"),
+    d = 1*(treatmen == "Treatment")
+  )
+```
+
+```{r}
+# recode age as a discrete variable
+dat <- dat %>%
+  mutate(
+    age_bin = cut(
+      age,
+      breaks = c(18, 30, 45, 65, 90),
+      right = FALSE,
+      labels = c("18–29", "30–44", "45–64", "65+")
+    )
+  )
+```
+
+
+# Exercises
+
+1. Naive estimation: Estimate the ATE using the difference in sample means between the treated and control units
+
+
+2. Estimate the ATE using post-stratification on race, party, sex, age, and turf
+
+
+3. Estimation with the "true" propensity score
+
+3.1 Generate the "true" propsensity score assuming that treatment is randomly assigned across turfs
+
+3.2 Estimate the ATE with the "true" propensity score
+
+
+4. Compare the different estimates. What do you find?
+
+
+
