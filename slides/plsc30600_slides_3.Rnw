@@ -1,0 +1,947 @@
+% !Rnw weave = Sweave
+\documentclass[xcolor={dvipsnames}, handout]{beamer}
+
+\RequirePackage{../assets/pres-template_MOW}
+\usepackage{colortbl}
+
+%--------------------------------------------------------------------------
+% Specific to this document ---------------------------------------
+
+%--------------------------------------------------------------------------
+% \setbeamercovered{transparent}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setlength{\tabcolsep}{1.3pt}
+\title{PLSC 30600}
+\subtitle{Week 3: MAR estimation, reweighting, and imputation}
+\date{Winter 2026}
+\author{Molly Offer-Westort}
+\institute{Department of Political Science, \\University of Chicago}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+%-------------------------------------------------------------------------------%
+\frame{\titlepage
+\thispagestyle{empty}
+}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[shrink=14]{Science table: MAR and regression estimation}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $Y_i(0)$ & \textcolor{Violator1}{$R_i$} & \textcolor{Violator1}{$Y_i^*(0)$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-6}
+1 & A & 0 & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{-99} \\
+3 & B & 0 & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{-99} \\
+5 & A & 1 & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{-99} \\
+7 & B & 1 & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{-99} \\
+9 & A & 0 & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+10 & B & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{-99} \\
+\end{tabular}
+\end{table}
+\vspace{0.25cm}
+
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}{Regression estimation under MAR}
+\begin{wideitemize}
+\item \uncover<+->{Under MAR, for all $x \in \Supp[X_i]$:}
+\end{wideitemize}
+\uncover<+->{\[
+\E[Y_i \mid R_i = 0, \X_i = \x] = \E[Y_i^* \mid R_i=1, \X_i=\x] = \E[Y_i \mid \X_i=\x].
+\]}
+\begin{wideitemize}
+\item \uncover<+->{In our case, with two covariates by MAR:}
+\end{wideitemize}
+\uncover<+->{\[
+\E[Y_i \mid X_{[1]i}, X_{[2]i}]
+= \E[Y_i^* \mid R_i=1, X_{[1]i}, X_{[2]i}].
+\]}
+\begin{wideitemize}
+\item \uncover<+->{Assume a functional form for the CEF, e.g.}
+\end{wideitemize}
+\uncover<+->{\[
+\E[Y_i \mid X_{[1]i}, X_{[2]i}]
+= \beta_0 + \beta_1 \mathbf{1}\{X_{[1]i}=B\} + \beta_2 X_{[2]i}.
+\]}
+\begin{wideitemize}
+\item \uncover<+->{Use regression to estimate, predict for all $i$, then average.}
+\end{wideitemize}
+\end{frame}
+%-------------------------------------------------------------------------------%
+
+\begin{frame}[shrink=14]{Science table: MAR and regression estimation}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $Y_i(0)$ & \textcolor{Violator1}{$R_i$} & \textcolor{Violator1}{$Y_i^*(0)$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-6}
+1 & A & 0 & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{$\hat \E[Y_i \mid X_{[1]i} = x_[1], X_{[2]i} = x_[2] ]$} \\
+3 & B & 0 & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{$\hat \E[Y_i \mid X_{[1]i} = x_[1], X_{[2]i} = x_[2] ]$} \\
+5 & A & 1 & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{$\hat \E[Y_i \mid X_{[1]i} = x_[1], X_{[2]i} = x_[2] ]$} \\
+7 & B & 1 & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{$\hat \E[Y_i \mid X_{[1]i} = x_[1], X_{[2]i} = x_[2] ]$} \\
+9 & A & 0 & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+10 & B & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{$\hat \E[Y_i \mid X_{[1]i} = x_[1], X_{[2]i} = x_[2] ]$} \\
+\end{tabular}
+\end{table}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}[shrink=14]{Science table: MAR regression plug-in}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $Y_i(0)$ & \textcolor{Violator1}{$R_i$} & \textcolor{Violator1}{$Y_i^*(0)$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-6}
+1 & A & 0 & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{$\hat{\beta}_0$} \\
+3 & B & 0 & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{$\hat{\beta}_0 + \hat{\beta}_2$} \\
+5 & A & 1 & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{$\hat{\beta}_0 + \hat{\beta}_3$} \\
+7 & B & 1 & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{$\hat{\beta}_0 + \hat{\beta}_2 + \hat{\beta}_3$} \\
+9 & A & 0 & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+10 & B & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{red!40}{$\hat{\beta}_0 + \hat{\beta}_2 + \hat{\beta}_3$} \\
+\end{tabular}
+\end{table}
+\vspace{0.25cm}
+\[
+\E[Y_i \mid X_{[1]i}, X_{[2]i}]
+= \beta_0 + \beta_2 \mathbf{1}\{X_{[1]i}=B\} + \beta_3 X_{[2]i}.
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Code: regression plug-in under MAR}
+\small
+<<regression-plug-in, echo=TRUE>>=
+df <- data.frame(
+  X_1 = c("A","A","B","B","A","A","B","B","A","B"),
+  X_2 = c(0,0,0,0,1,1,1,1,0,1),
+  R   = c(1,0,1,0,1,0,1,0,1,0),
+  Ystar = c(0,-99,1,-99,0,-99,1,-99,1,-99)
+)
+
+df$X_1 <- factor(df$X_1)
+
+(fit <- lm(Ystar ~ X_1 + X_2, data = df, subset = R == 1))
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}[fragile]{Code: regression plug-in under MAR}
+\small
+<<regression-plug-in, echo=TRUE>>=
+df$yhat <- df$Ystar
+df$yhat[which(df$R == 0)] <- 
+  predict(fit, newdata = df[which(df$R == 0), ])
+round(df$yhat, 3)
+mean(df$yhat)
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[shrink=14]{Science table: strong ignorability and regression estimation}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-5}\cmidrule(lr){6-7}
+1 & A & 0 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+3 & B & 0 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+5 & A & 1 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+7 & B & 1 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \textcolor{red!40}{?} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+9 & A & 0 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+10 & B & 1 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+\end{tabular}
+\end{table}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}{Regression estimation under strong ignorability}
+\begin{wideitemize}
+\item Under strong ignorability, for all $x \in \Supp[X_i]$:
+\end{wideitemize}
+\[
+\E[Y_i(d) \mid X_i=x] = \E[Y_i \mid D_i=d, X_i=x], \quad d \in \{0,1\}.
+\]\pause
+\begin{wideitemize}
+\item We need a treatment indicator in the regression model.\pause
+\item Example CEF specification:
+\end{wideitemize}
+\[
+\E[Y_i \mid D_i, X_{[1]i}, X_{[2]i}]
+= \beta_0 + \beta_1 D_i + \beta_2 \mathbf{1}\{X_{[1]i}=B\} + \beta_3 X_{[2]i}.
+\]
+\begin{wideitemize}
+\item Predict $\widehat{Y}_i(0)$ and $\widehat{Y}_i(1)$, then average differences.
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}{Definition: regression estimator for causal inference}
+\begin{definition}[Regression Estimator for Causal Inference]
+Let $Y_i(0)$, $Y_i(1)$, and $D_i$ be random variables with $\Supp[D_i]=\{0,1\}$.
+Let $Y_i = Y_i(1)\cdot D_i + Y_i(0)\cdot (1-D_i)$ and $\tau_i = Y_i(1)-Y_i(0)$, and
+let $\X_i$ be a random vector. Given $n$ i.i.d. observations of $(Y_i, D_i, \X_i)$,
+the regression estimator for $\E[\tau_i]$ is
+\[
+\widehat{\E}[\tau_i] =
+\frac{1}{n}\sum_{i=1}^n \widehat{\E}[Y_i \mid D_i=1, \X_i]
+\;-\;
+\frac{1}{n}\sum_{i=1}^n \widehat{\E}[Y_i \mid D_i=0, \X_i],
+\]
+where $\widehat{\E}[Y_i \mid D_i=d, \X_i=\x]$ is an estimator of the CEF.
+\end{definition}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}[shrink=14]{Science table: strong ignorability and regression imputation}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-5}\cmidrule(lr){6-7}
+1 & A & 0 & 0 & \textcolor{red!40}{$\hat m_1(x)$} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \textcolor{red!40}{$\hat m_0(x)$} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+3 & B & 0 & 1 & \textcolor{red!40}{$\hat m_1(x)$} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \textcolor{red!40}{$\hat m_0(x)$} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+5 & A & 1 & 0 & \textcolor{red!40}{$\hat m_1(x)$} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \textcolor{red!40}{$\hat m_0(x)$} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+7 & B & 1 & 1 & \textcolor{red!40}{$\hat m_1(x)$} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \textcolor{red!40}{$\hat m_0(x)$} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+9 & A & 0 & 1 & \textcolor{red!40}{$\hat m_1(x)$} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+10 & B & 1 & \textcolor{red!40}{$\hat m_0(x)$} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+\end{tabular}
+\end{table}
+\vspace{0.15cm}
+\[
+\hat m_d(x) = \hat{\E}\!\left[Y_i \mid D_i=d, X_{[1]i}=x_{[1]}, X_{[2]i}=x_{[2]}\right], \quad d \in \{0,1\}.
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}[shrink=14]{Science table: strong ignorability regression plug-in}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-5}\cmidrule(lr){6-7}
+1 & A & 0 & 0 & \textcolor{red!40}{$\hat{\beta}_0 + \hat{\beta}_1$} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \textcolor{red!40}{$\hat{\beta}_0$} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+3 & B & 0 & 1 & \textcolor{red!40}{$\hat{\beta}_0 + \hat{\beta}_1 + \hat{\beta}_2$} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \textcolor{red!40}{$\hat{\beta}_0 + \hat{\beta}_2$} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+5 & A & 1 & 0 & \textcolor{red!40}{$\hat{\beta}_0 + \hat{\beta}_1 + \hat{\beta}_3$} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \textcolor{red!40}{$\hat{\beta}_0 + \hat{\beta}_3$} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+7 & B & 1 & 1 & \textcolor{red!40}{$\hat{\beta}_0 + \hat{\beta}_1 + \hat{\beta}_2 + \hat{\beta}_3$} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \textcolor{red!40}{$\hat{\beta}_0 + \hat{\beta}_2 + \hat{\beta}_3$} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+9 & A & 0 & 1 & \textcolor{red!40}{$\hat{\beta}_0 + \hat{\beta}_1$} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+10 & B & 1 & \textcolor{red!40}{$\hat{\beta}_0 + \hat{\beta}_2 + \hat{\beta}_3$} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+\end{tabular}
+\end{table}
+\vspace{0.25cm}
+\[
+\E[Y_i \mid D_i, X_{[1]i}, X_{[2]i}]
+= \beta_0 + \beta_1 D_i + \beta_2 \mathbf{1}\{X_{[1]i}=B\} + \beta_3 X_{[2]i}.
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Code: regression plug-in under ignorability}
+\small
+<<regression-ignorable-fit, echo=TRUE>>=
+df <- data.frame(
+  X_1 = c("A","A","B","B","A","A","B","B","A","B"),
+  X_2 = c(0,0,0,0,1,1,1,1,0,1),
+  D   = c(0,1,0,1,0,1,0,1,0,1),
+  Y   = c(0,1,1,1,0,1,1,0,0,1)
+)
+
+df$X_1 <- factor(df$X_1)
+
+(fit_ign <- lm(Y ~ D + X_1 + X_2, data = df))
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}[fragile]{Code: regression plug-in under ignorability}
+\small
+<<regression-ignorable-impute, echo=TRUE>>=
+df$yhat_1 <- df$Y
+df$yhat_0 <- df$Y
+df$yhat_1[which(df$D == 0)] <-
+  predict(fit_ign, 
+          newdata = transform(df[which(df$D == 0), ], D = 1))
+df$yhat_0[which(df$D == 1)] <-
+  predict(fit_ign, 
+          newdata = transform(df[which(df$D == 1), ], D = 0))
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}[fragile]{Code: regression plug-in under ignorability}
+\small
+<<regression-ignorable-impute, echo=TRUE>>=
+round(df[, c("yhat_0", "yhat_1")], 3)
+
+mean(df$yhat_1 - df$yhat_0)
+@
+\end{frame}
+
+%%%%%NOTE%%%%%
+\note{
+\scriptsize \singlespacing
+
+\begin{wideitemize}
+\item Emphasize: this is still a plug-in estimator; the difference is how we estimate the CEF.
+\item Stress the modeling risk: misspecification of the CEF can bias the estimate even if MAR holds.
+\item If students ask: you can impute only missing rows or predict for all rows; the sample mean is the same either way.
+\end{wideitemize}
+
+}
+
+
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Directed Acyclic Graphs}
+\begin{wideitemize}
+\item {DAGs: what problem are we solving?}\pause
+\item We keep writing assumptions like:
+\[
+Y_i(d)\ \perp\!\!\!\perp\ D_i \mid X_i
+\qquad\text{or}\qquad
+Y_i\ \perp\!\!\!\perp\ R_i \mid X_i.
+\]
+\item A DAG is a compact way to encode \emph{which conditional independences are plausible}
+based on the data-generating process.\pause
+\item Main use today: selecting (and \emph{not} selecting) adjustment variables.
+\end{wideitemize}
+\vfill 
+\hfill \footnotesize \cite{greenland-et-al_1999}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Association vs causation: $\Pr[Y\mid D]$ vs $\Pr[Y\mid do(D)]$}
+\begin{wideitemize}
+\item $\Pr[Y=y \mid D=d]$: observational association.
+\item $\Pr[Y=y \mid do(D=d)]$: distribution of $Y$ \emph{under intervention} setting $D:=d$.
+\item \textbf{Graph surgery:} $do(D=d)$ deletes all arrows \emph{into} $D$ (intervention breaks causes of $D$).
+\item Conditioning does \emph{not} change the graph; it filters/stratifies the observed data.
+\end{wideitemize}
+
+\vfill
+\hfill \footnotesize \cite{pearl-et-al_2016}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{DAG primitives: nodes, arrows, paths, ancestors}
+\begin{columns}
+\begin{column}{0.58\textwidth}
+\begin{wideitemize}
+\item Node = variable.
+\item Arrow $A \to B$ means $A$ is a direct cause of $B$.
+\item A \emph{path} is any sequence of adjacent arrows (ignore direction).
+\item A \emph{directed path} is a causal pathway (all arrows forward).
+\item $A$ is an \emph{ancestor} of $B$ if there is a directed path $A \to \cdots \to B$. \pause (ancestor/descendant : parent/child)
+\end{wideitemize}
+\end{column}
+\begin{column}{0.42\textwidth}
+\centering
+\begin{tikzpicture}[x=2.2cm,y=1.2cm,>=stealth, thick]
+\node (X) at (0,1) {$X$};
+\node (D) at (0,0) {$D$};
+\node (M) at (1,0.25) {$M$};
+\node (Y) at (2,0) {$Y$};
+\draw[->] (X) -- (D);
+\draw[->] (X) -- (Y);
+\draw[->] (D) -- (M);
+\draw[->] (M) -- (Y);
+\end{tikzpicture}
+
+\vspace{0.2cm}
+\footnotesize $D \to M \to Y$ is a directed path; \\
+$D \leftarrow X \rightarrow Y$ is a backdoor path.
+\end{column}
+\end{columns}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Chain, fork, collider }
+\begin{columns}
+\begin{column}{0.34\textwidth}
+\centering
+\textbf{Chain}\\[-0.1cm]
+\begin{tikzpicture}[x=1.1cm,y=1.0cm,>=stealth, thick]
+\node (X) at (0,0) {$X$};
+\node (Z) at (1,0) {$Z$};
+\node (Y) at (2,0) {$Y$};
+\draw[->] (X) -- (Z);
+\draw[->] (Z) -- (Y);
+\end{tikzpicture}
+
+\vspace{0.15cm}
+\footnotesize Conditioning on $Z$ blocks the path. 
+\end{column}
+\begin{column}{0.34\textwidth}
+\centering
+\textbf{Fork (confounder)}\\[-0.1cm]
+\begin{tikzpicture}[x=1.1cm,y=1.0cm,>=stealth, thick]
+\node (Z) at (1,0.7) {$Z$};
+\node (X) at (0,0) {$X$};
+\node (Y) at (2,0) {$Y$};
+\draw[->] (Z) -- (X);
+\draw[->] (Z) -- (Y);
+\end{tikzpicture}
+
+\vspace{0.15cm}
+\footnotesize Conditioning on $Z$ blocks the backdoor.
+\end{column}
+\begin{column}{0.32\textwidth}
+\centering
+\textbf{Collider}\\[-0.1cm]
+\begin{tikzpicture}[x=1.1cm,y=1.0cm,>=stealth, thick]
+\node (X) at (0,0) {$X$};
+\node (Z) at (1,0.7) {$Z$};
+\node (Y) at (2,0) {$Y$};
+\draw[->] (X) -- (Z);
+\draw[->] (Y) -- (Z);
+\end{tikzpicture}
+
+\vspace{0.15cm}
+\footnotesize Path blocked unless you condition on $Z$ (or a descendant).
+\end{column}
+\end{columns}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{d-separation: the blocking definition }
+\begin{wideitemize}
+\item ``Blocking a path'' means: given a conditioning set $Z$, that path cannot transmit
+statistical association between its endpoints under the graphical rules of d-separation.\pause
+\item A path is \textbf{blocked} by a conditioning set $Z$ if \emph{there exists at least one node}
+on the path such that:
+\begin{wideitemize}
+\item the path contains a \textbf{chain} or \textbf{fork}
+$A \to B \to C$ or $A \leftarrow B \to C$
+with the middle node $B \in Z$; or
+\item the path contains a \textbf{collider}
+$A \to B \leftarrow C$ with $B \notin Z$ \emph{and}
+no descendant of $B$ in $Z$.
+\end{wideitemize}
+\item If \emph{every} path between $X$ and $Y$ is blocked by $Z$, then
+$X$ and $Y$ are \textbf{d-separated} by $Z$.
+\item Pearl et al.\ convention: d-separated $\Rightarrow$ \emph{guaranteed} conditional independence
+(given the model); d-connected $\Rightarrow$ dependence is \emph{typical} (except cancellations).
+\end{wideitemize}
+
+
+
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+%-------------------------------------------------------------------------------%
+\begin{frame}{Collider intuition: ``selection'' creates dependence}
+\begin{columns}
+\begin{column}{0.4\textwidth}
+\centering
+\begin{tikzpicture}[x=2.1cm,y=1.2cm,>=stealth, thick]
+\node (A) at (0,0.8) {$A$};
+\node (C) at (1.4,0.8) {$C$};
+\node (B) at (0.7,0) {$B$};
+\draw[->] (A) -- (B);
+\draw[->] (C) -- (B);
+\end{tikzpicture}
+
+\vspace{0.15cm}
+\footnotesize $A \to B \leftarrow C$ (collider at $B$)
+\end{column}
+\begin{column}{0.6\textwidth}
+\begin{wideitemize}
+\item Think of:
+\begin{wideitemize}
+\item $A$ = ability,\quad $C$ = effort,\\ 
+$B$ = admission to a selective program.
+\end{wideitemize}
+\item In the full population, ability and effort can be independent:
+\[
+A \perp\!\!\!\perp C
+\quad\Longleftrightarrow\quad
+\Pr[C \mid A] = \Pr[C].
+\]
+\item The collider $B$ blocks the path between $A$ and $C$ \emph{unless we condition on $B$.}
+\end{wideitemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Conditioning on admission opens the collider path}
+\begin{wideitemize}
+\item Now restrict attention to admitted students: condition on $B=1$.
+\item Intuition: admission depends on \emph{either} high ability or high effort (or both).
+\begin{wideitemize}
+\item If $A$ is low but $B=1$, then $C$ must be high to ``compensate.''
+\item If $A$ is high and $B=1$, then $C$ can be lower and admission still occurs.
+\end{wideitemize}
+\item Result: within the selected group $B=1$, $A$ and $C$ become dependent:
+\[
+\Pr[C \mid A, B=1] \neq \Pr[C \mid B=1].
+\]
+\item DAG language: conditioning on a collider \textbf{opens} the path $A \to B \leftarrow C$.
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Why descendants of a collider matter (conditioning ``leaks'' information)}
+\begin{columns}
+\begin{column}{0.4\textwidth}
+\centering
+\begin{tikzpicture}[x=2.0cm,y=1.15cm,>=stealth, thick]
+\node (A) at (0,1) {$A$};
+\node (C) at (1.6,1) {$C$};
+\node (B) at (0.8,0.35) {$B$};
+\node (D) at (0.8,-0.35) {$D$};
+\draw[->] (A) -- (B);
+\draw[->] (C) -- (B);
+\draw[->] (B) -- (D);
+\end{tikzpicture}
+
+\vspace{0.15cm}
+\footnotesize $D$ is a descendant of the collider $B$
+\end{column}
+\begin{column}{0.6\textwidth}
+\begin{wideitemize}
+\item Let $D$ = program completion, where $B \to D$.
+\item Conditioning on $D=1$ gives (partial) information about $B$.
+\item This can also induce dependence between $A$ and $C$:
+\[
+\Pr[C \mid A, D=1] \neq \Pr[C \mid D=1].
+\]
+\item Rule: a collider blocks a path \emph{only if} we do not condition on the collider
+\emph{and} do not condition on any of its descendants.
+\end{wideitemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Adjustment for causal effects: backdoor criterion }
+\begin{wideitemize}
+\item A \textbf{backdoor path} from $D$ to $Y$ is any path that begins with an arrow \emph{into} $D$.
+\item A set $Z$ satisfies the \textbf{backdoor criterion} for $(D,Y)$ if:
+\begin{wideitemize}
+\item no element of $Z$ is a descendant of $D$, and
+\item $Z$ blocks every backdoor path from $D$ to $Y$.
+\end{wideitemize}
+\item If the backdoor criterion holds, then the causal effect is identified by:
+\[
+\Pr[Y=y \mid do(D=d)] = \sum_{z} \Pr[Y=y \mid D=d, Z=z]\Pr[Z=z].
+\]
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Example: confounding and a valid adjustment set}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\centering
+\begin{tikzpicture}[x=2.2cm,y=1.2cm,>=stealth, thick]
+\node (X) at (0,0.8) {$X$};
+\node (D) at (0,0) {$D$};
+\node (Y) at (1.4,0) {$Y$};
+\draw[->] (X) -- (D);
+\draw[->] (X) -- (Y);
+\draw[->] (D) -- (Y);
+\end{tikzpicture}
+\end{column}
+\begin{column}{0.5\textwidth}
+\begin{wideitemize}
+\item Backdoor: $D \leftarrow X \rightarrow Y$.
+\item $Z=\{X\}$ blocks the backdoor and has no descendants of $D$.
+\item Graphically: $Y(d)\perp\!\!\!\perp D\mid X$ is plausible if this DAG is correct.
+\end{wideitemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Post-treatment adjustment changes the estimand (and can bias)}
+\begin{columns}
+\begin{column}{0.52\textwidth}
+\centering
+\begin{tikzpicture}[x=2.2cm,y=1.2cm,>=stealth, thick]
+\node (D) at (0,0) {$D$};
+\node (M) at (1.1,0) {$M$};
+\node (Y) at (2.2,0) {$Y$};
+\draw[->] (D) -- (M);
+\draw[->] (M) -- (Y);
+\draw[->] (D) to[bend left=20] (Y);
+\end{tikzpicture}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{wideitemize}
+\item $M$ is a mediator: conditioning on $M$ blocks part of the causal effect, and gives us a conditional association, not a causal effect.
+\item If you want the \textbf{total effect} ($\Pr[Y|do(D=d)]$), $M$ is not in a backdoor adjustment set.
+\item More generally: descendants of $D$ are excluded by the backdoor criterion.
+\end{wideitemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Mediator vs collider: why the rule differs}
+\begin{columns}
+\begin{column}{0.48\textwidth}
+\centering
+\textbf{Mediator}\\[0.1cm]
+\begin{tikzpicture}[x=1.6cm,y=1.0cm,>=stealth, thick]
+\node (D) at (0,0) {$D$};
+\node (M) at (1,0) {$M$};
+\node (Y) at (2,0) {$Y$};
+\draw[->] (D) -- (M);
+\draw[->] (M) -- (Y);
+\draw[->] (D) to[bend left=25] (Y);
+\end{tikzpicture}
+
+\vspace{0.15cm}
+\footnotesize Conditioning on $M$ changes the estimand (direct vs total effect).
+\end{column}
+\begin{column}{0.52\textwidth}
+\centering
+\textbf{Collider}\\[0.1cm]
+\begin{tikzpicture}[x=1.6cm,y=1.0cm,>=stealth, thick]
+\node (A) at (0,0.7) {$A$};
+\node (C) at (1,0.0) {$C$};
+\node (B) at (2,0.7) {$B$};
+\draw[->] (A) -- (C);
+\draw[->] (B) -- (C);
+\end{tikzpicture}
+
+\vspace{0.15cm}
+\footnotesize Conditioning on $C$ creates bias by opening a path.
+\end{column}
+\end{columns}
+
+\vspace{0.3cm}
+\begin{wideitemize}
+\item Mediators: conditioning changes \emph{which effect} you estimate.
+\item Colliders: conditioning breaks identification entirely.
+\end{wideitemize}
+\end{frame}
+
+
+%-------------------------------------------------------------------------------%
+
+
+\begin{frame}{Missing data as a DAG: MAR vs MNAR}
+\begin{columns}
+\begin{column}{0.48\textwidth}
+\centering
+\textbf{MAR (OK)}\\[-0.15cm]
+\begin{tikzpicture}[x=2.0cm,y=1.15cm,>=stealth, thick]
+\node (X) at (0,0.7) {$X$};
+\node (Y) at (1.2,0.7) {$Y$};
+\node (R) at (0.6,0) {$R$};
+\draw[->] (X) -- (Y);
+\draw[->] (X) -- (R);
+\end{tikzpicture}
+
+\vspace{0.15cm}
+\footnotesize $Y \perp\!\!\!\perp R \mid X$.
+\end{column}
+\begin{column}{0.52\textwidth}
+\centering
+\textbf{MNAR (problem)}\\[-0.15cm]
+\begin{tikzpicture}[x=2.0cm,y=1.15cm,>=stealth, thick]
+\node (X) at (0,0.7) {$X$};
+\node (Y) at (1.2,0.7) {$Y$};
+\node (R) at (0.6,0) {$R$};
+\draw[->] (X) -- (Y);
+\draw[->] (X) -- (R);
+\draw[->] (Y) -- (R);
+\end{tikzpicture}
+
+\vspace{0.15cm}
+\footnotesize $Y \not\!\perp\!\!\!\perp R \mid X$.
+\end{column}
+\end{columns}
+
+\vspace{0.35cm}
+\begin{wideitemize}
+\item $R$ is the response/observation indicator (e.g., $Y$ observed if $R=1$).
+\item Under MAR, conditioning on $X$ blocks all paths between $Y$ and $R$.
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Complete-case analysis is conditioning on $R=1$ (selection)}
+\begin{columns}
+\begin{column}{0.52\textwidth}
+\centering
+\begin{tikzpicture}[x=2.0cm,y=1.2cm,>=stealth, thick]
+\node (D) at (0,0.7) {$D$};
+\node (Y) at (1.4,0.7) {$Y$};
+\node (R) at (0.7,0) {$R$};
+\draw[->] (D) -- (R);
+\draw[->] (Y) -- (R);
+\end{tikzpicture}
+
+\vspace{0.15cm}
+\footnotesize Conditioning on $R=1$ opens the collider at $R$.
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{wideitemize}
+\item Even if $D$ and $Y$ are independent marginally,
+restricting to the observed sample ($R=1$) can induce $D$--$Y$ association.
+\item This is the collider lesson applied to missingness/selection.
+\item Under MAR, we try to block the $Y \to R$ channel \emph{given covariates} (previous slide).
+\end{wideitemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{\cite{greenland-et-al_1999}: bad controls (conditioning can create confounding)}
+\begin{columns}
+\begin{column}{0.4\textwidth}
+\centering
+\begin{tikzpicture}[x=2.0cm,y=1.15cm,>=stealth, thick]
+\node (A) at (0,1) {$A$};
+\node (B) at (1.3,1) {$B$};
+\node (C) at (0.65,0.45) {$C$};
+\node (D) at (0,0) {$D$};
+\node (Y) at (1.3,0) {$Y$};
+\draw[->] (A) -- (C);
+\draw[->] (B) -- (C);
+\draw[->] (A) -- (D);
+\draw[->] (B) -- (Y);
+\draw[->] (D) -- (Y);
+\end{tikzpicture}
+
+\vspace{0.15cm}
+\footnotesize $C$ is a collider on $A \to C \leftarrow B$.
+\end{column}
+\begin{column}{0.6\textwidth}
+\begin{wideitemize}
+\item Without conditioning on $C$, the collider blocks that path.
+\item Conditioning on $C$ opens the collider and induces association between $A$ and $B$.
+\item This opens a new backdoor from $D$ to $Y$ through $A$ and $B$.
+\item Lesson: ``control for $C$'' can \emph{increase} bias.
+\end{wideitemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Why this mistake is tempting: total vs direct effects}
+\begin{wideitemize}
+\item In the DAG, $C$ is \emph{affected by} both $A$ and $B$.
+\item Researchers often reason:
+\begin{quote}
+``$C$ is related to both treatment and outcome, so we should control for it.''
+\end{quote}
+\item But this mixes up two different causal questions:
+\begin{wideitemize}
+\item \textbf{Total effect of $D$ on $Y$:} effect through \emph{all} causal paths.
+\item \textbf{Direct effect of $D$ on $Y$:} effect \emph{not operating through intermediates}.
+\end{wideitemize}
+\item Conditioning on $C$ does \emph{not} identify a direct effect here—it creates bias.
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{What conditioning on $C$ actually does}
+\begin{wideitemize}
+\item $C$ is a \textbf{collider} on the path $D \leftarrow A \to C \leftarrow B \to Y$.
+\item Conditioning on $C$:
+\begin{wideitemize}
+\item induces dependence between $A$ and $B$;
+\item opens a backdoor path from $D$ to $Y$;
+\item violates ignorability for the total effect.
+\end{wideitemize}
+\item Formally, after conditioning on $C$:
+\[
+\Pr[Y(d) \mid D, C] \neq \Pr[Y(d) \mid C].
+\]
+\item So the resulting estimand is neither:
+\begin{itemize}
+\item the total effect of $D$ on $Y$, nor
+\item a well-defined direct effect.
+\end{itemize}
+\end{wideitemize}
+\end{frame}
+
+% -----------------------------------------------------------------------------%
+
+\begin{frame}{Practical workflow for choosing controls}
+\begin{wideitemize}
+\item Step 1: draw a DAG that reflects substantive knowledge.
+\item Step 2: decide the estimand (total effect? direct effect?).
+\item Step 3: find a backdoor adjustment set (blocks all arrows-into-$D$ paths, avoids descendants of $D$).
+\item Step 4: check for \textbf{colliders} and \textbf{post-treatment variables} you might accidentally condition on.
+\item Step 5: translate to an estimator (regression / weighting / matching), then diagnose overlap and sensitivity later.
+\end{wideitemize}
+\end{frame}
+
+% -----------------------------------------------------------------------------%
+\begin{frame}[shrink=14]{Science table: strong ignorability and the propensity score}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-5}\cmidrule(lr){6-7}
+1 & A & 0 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+3 & B & 0 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+5 & A & 1 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+7 & B & 1 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \textcolor{red!40}{?} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+9 & A & 0 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+10 & B & 1 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+\end{tabular}
+\end{table}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[shrink=14]{Science table: add the (empirical) propensity score}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $p_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-6}\cmidrule(lr){7-8}
+1 & A & 0 & \cellcolor{Contrast2l}0.33 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \cellcolor{Contrast2l}0.33 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+3 & B & 0 & \cellcolor{Contrast6l}0.50 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \cellcolor{Contrast6l}0.50 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+5 & A & 1 & \cellcolor{Contrast6l}0.50 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \cellcolor{Contrast6l}0.50 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+7 & B & 1 & \cellcolor{Contrast4l}0.67 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \cellcolor{Contrast4l}0.67 & \textcolor{red!40}{?} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+9 & A & 0 & \cellcolor{Contrast2l}0.33 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+10 & B & 1 & \cellcolor{Contrast4l}0.67 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+\end{tabular}
+\end{table}
+
+\vspace{0.2cm}
+\begin{table}[h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{c c c c}
+$X_{[1]}$ & $X_{[2]}$ & $n$ & $p_D(X)$ \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-4}
+A & 0 & 3 & \cellcolor{Contrast2l}0.33 \\
+A & 1 & 2 & \cellcolor{Contrast6l}0.50 \\
+B & 0 & 2 & \cellcolor{Contrast6l}0.50 \\
+B & 1 & 3 & \cellcolor{Contrast4l}0.67 \\
+\end{tabular}
+\end{table}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[shrink=14]{Science table: hot deck imputation (propensity score)}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $p_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-6}\cmidrule(lr){7-8}
+1 & A & 0 & \cellcolor{Contrast2l}0.33 & 0 & \textcolor{red!40}{\textit{donor}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \cellcolor{Contrast2l}0.33 & \textcolor{red!40}{\textit{donor}} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+3 & B & 0 & \cellcolor{Contrast6l}0.50 & 1 & \textcolor{red!40}{\textit{donor}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \cellcolor{Contrast6l}0.50 & \textcolor{red!40}{\textit{donor}} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+5 & A & 1 & \cellcolor{Contrast6l}0.50 & 0 & \textcolor{red!40}{\textit{donor}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \cellcolor{Contrast6l}0.50 & \textcolor{red!40}{\textit{donor}} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+7 & B & 1 & \cellcolor{Contrast4l}0.67 & 1 & \textcolor{red!40}{\textit{donor}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \cellcolor{Contrast4l}0.67 & \textcolor{red!40}{\textit{donor}} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+9 & A & 0 & \cellcolor{Contrast2l}0.33 & 1 & \textcolor{red!40}{\textit{donor}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+10 & B & 1 & \cellcolor{Contrast4l}0.67 & \textcolor{red!40}{\textit{donor}} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+\end{tabular}
+\end{table}
+
+\vspace{0.2cm}
+\begin{wideitemize}
+\item For each missing potential outcome, choose a nearest-neighbor donor in $p_D(X)$ from the opposite treatment arm.
+\item Impute $\widehat{Y}_i(0)$ or $\widehat{Y}_i(1)$ with that donor's observed outcome.
+\end{wideitemize}
+\end{frame}
+%-------------------------------------------------------------------------------%
+\backupbegin
+%-------------------------------------------------------------------------------%
+
+\begin{frame}[allowframebreaks]{References}
+    \bibliographystyle{apalike}
+    \bibliography{../assets/PLSC30600}
+\end{frame}
+%-------------------------------------------------------------------------------%
+\backupend
+
+
+\end{document}
