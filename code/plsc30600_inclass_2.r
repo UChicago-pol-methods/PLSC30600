@@ -1,6 +1,6 @@
 ## Week 2 Exercise: Post-stratification plug-in under MAR
 ##  (1) Stratify on ALL covariates X
-##  (2) Stratify on estimated true propensity score
+##  (2) Stratify on true propensity score
 
 set.seed(30600)
 library(dplyr)
