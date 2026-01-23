@@ -1,0 +1,222 @@
+---
+title: "W3 Section Exercise"
+author: "Maggie X. Wang"
+date: "2026-01-20"
+output: html_document
+---
+
+1. I would like to simulate data from a few normal distributions with different means then generate a mean estimate for each. I wrote the following function, but it is not working as intended. "Debug" it.
+
+```{r}
+run <- function(n=200) {
+  
+  # Initialize
+  i <- 0
+  estimates <- c()
+  
+  # Specify function to run one simulation
+  run_once <- function(i, mu_grid){
+    mu <- mu_grid[i]
+    y <- rnorm(n, mean = mu, sd = .1)
+    est <- mean(y)
+    
+    i <- i + 1
+    if (i > length(mu_grid)) i <- 0
+    
+    append(estimates, est) # Returns the new vector of estimates
+  }
+  
+  # Call function to run one simulation and estimation
+  run_once(i, mu_grid)
+  
+  estimates # Return the complete vector of estimates
+}
+
+# Run the simulation
+set.seed(30600)
+mu_grid <- seq(0, 0.75, 0.25)
+run()
+```
+
+__The function is supposed to generate 4 estimates, around 0, .25, .5, and .75, respectively.__
+
+__Errors to fix__
+__1. mu_grid is defined in the global environment and therefore needs to be passed into run().__
+__2. R is 1-indexed, so i needs to start with 1.__
+__3. The function run_once() is only modifying i and estimates inside the local environment of run_once() and not updating in the parent environment of run(). Further, calling run_once() is not the same as capturing what it returns.__
+__4. There needs to be some way in which run_once() is being repeated such that it can iterate through mu_grid.__
+
+```{r}
+# Code with minimal fixes
+# Redundant for pedagogical purposes
+
+# Could also fix by interacting with the global or parent env. directly such as through <<- or get(, envir=), but this approach is not recommended
+
+run <- function(mu_grid, n = 200) { # pass mu_grid in from the global env
+  
+  # Initialize
+  i <- 1 # R is index 1
+  estimates <- c()
+  
+  # Specify function to run one simulation
+  run_once <- function(i, mu_grid, estimates){
+    mu <- mu_grid[i]
+    y <- rnorm(n, mean = mu, sd = .1)
+    est <- mean(y)
+    
+    i <- i + 1
+    if (i > length(mu_grid)) i <- 1 # R is index 1
+    
+    estimates <- append(estimates, est) # Update estimates locally
+    
+    list(i = i, estimates = estimates)  # Return local updates
+  }
+  
+  # Call run_once repeatedly
+  for (rep in 1:length(mu_grid)) {
+    # Capture local updates to update values in parent env.
+    out <- run_once(i, mu_grid, estimates)
+    i <- out$i 
+    estimates <- out$estimates
+  }
+  
+  estimates
+}
+
+# Run the simulation
+set.seed(30600)
+mu_grid <- seq(0, 0.75, 0.25)
+run(mu_grid)
+```
+
+
+2. `for` loops help us avoid having to manually index like in the function above. Modify the code following each of these steps:
+
+  a) Instead of function run, write a for-loop to call function run_once
+  
+```{r}
+# Define function
+run_once <- function(i, mu_grid, n = 200) {
+  mu <- mu_grid[i]
+  y  <- rnorm(n, mean = mu, sd = 0.1)
+  mean(y)
+}
+
+# Initialize
+set.seed(30600)
+mu_grid <- seq(0, 0.75, 0.25)
+estimates <- c()
+
+# Execute via for loop
+for (i in 1:length(mu_grid)) {
+  estimates <- append(estimates, run_once(i, mu_grid))
+}
+
+estimates
+```
+
+  
+  b) Instead of functions run and run_once, write a for-loop to conduct both data generation and estimation
+  
+```{r}
+# Initialize
+set.seed(30600)
+mu_grid <- seq(0, 0.75, 0.25)
+n <- 200
+estimates <- c()
+
+# Draw data and estimate via for loop
+for (i in 1:length(mu_grid)) {
+  mu <- mu_grid[i]
+  y  <- rnorm(n, mean = mu, sd = 0.1)
+  estimates <- append(estimates, mean(y))
+}
+
+estimates
+```
+
+  
+__at the end of this step, refer to code they have already seen such as the in-class exercise in week 2 or 3, to show them that more complicated code is essentially doing the same thing.__
+
+3. Suppose we want to estimate both the mean and the variance of each draw.
+
+  a) Modify the function such that it estimates and returns the variance alongside the mean. Write code to combine the two into a single dataframe or matrix.
+
+```{r}
+# Initialize DGP parameters
+set.seed(30600)
+mu_grid <- seq(0, 0.75, 0.25)
+n <- 200
+
+# Define data frame as the return data structure
+results <- data.frame(
+  mu = numeric(),
+  mean_hat = numeric(),
+  var_hat = numeric()
+)
+
+# Draw data and estimate via for loop
+for (i in 1:length(mu_grid)) {
+  mu <- mu_grid[i]
+  y  <- rnorm(n, mean = mu, sd = 0.1)
+
+  results <- rbind(
+    results,
+    data.frame(
+      mu = mu,
+      mean_hat = mean(y),
+      var_hat = var(y)
+    )
+  )
+}
+
+results
+```
+
+  b) Instead of a for-loop, use functions in the base::lapply() family to execute the simulations and estimation for both mean and variance.
+
+```{r}
+# Use lapply
+
+# Initialize DGP parameters
+set.seed(30600)
+mu_grid <- seq(0, 0.75, 0.25)
+n <- 200
+
+results_list <- lapply(mu_grid, # Define what list to apply over
+                       function(mu) {# Define function to apply
+                         y <- rnorm(n, mean = mu, sd = 0.1)
+                         c(mean_hat = mean(y), var_hat = var(y))
+                         }
+                       )
+
+# Turn the returned list into a data frame
+results <- data.frame(
+  mu = mu_grid,
+  do.call(rbind, results_list)
+)
+
+results
+```
+
+  c) Bonus: Instead of a for-loop or base::lappy, use functions in the purrr::map family to execute the simulations and estimation for both mean and variance.
+  
+```{r}
+#install.packages("purrr")
+library(purrr)
+
+set.seed(30600)
+mu_grid <- seq(0, 0.75, 0.25)
+n <- 200
+
+results <- map_dfr(mu_grid, function(mu) {
+  y <- rnorm(n, mean = mu, sd = 0.1)
+  data.frame(
+    mu = mu,
+    mean_hat = mean(y),
+    var_hat = var(y)
+  )
+})
+
+results
+```
