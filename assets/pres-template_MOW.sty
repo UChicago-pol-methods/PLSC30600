@@ -101,11 +101,11 @@ linkcolor=Contrast1
 \RequirePackage{bm}
 \RequirePackage{amsthm}
 \RequirePackage{bbm}
+\RequirePackage{dsfont}
 \RequirePackage{array}
 \RequirePackage{calc}
 \RequirePackage{dcolumn}
 \RequirePackage{graphicx}
-\RequirePackage[round]{natbib}
 \RequirePackage[normalem]{ulem}
 \RequirePackage{siunitx}
 \RequirePackage{graphicx}
@@ -113,6 +113,7 @@ linkcolor=Contrast1
 \RequirePackage{psfrag}
 \RequirePackage{wrapfig}
 \RequirePackage[all]{xy}
+\RequirePackage[round]{natbib}
 \RequirePackage{multirow}
 \RequirePackage{rotating}
 \RequirePackage{framed} % allow frames for instructions
@@ -182,7 +183,8 @@ linkcolor=Contrast1
 \newcommand{\arrowp}{\stackrel{p}{\rightarrow}}
 \newcommand{\0}{\bm{0}}
 \newcommand{\bP}{\bm{P}}
-\newcommand{\one}{\bm{\mathbbm{1}}}
+
+\newcommand{\one}{\textrm{{\textbf{1}}}}
 
 \newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}
 \def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}

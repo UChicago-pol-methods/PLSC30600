@@ -383,11 +383,11 @@ $i$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}
 \[
 \widehat{\E}[Y]=\sum_{x\in\Supp[X]}
 \left(
-\frac{\sum_{i=1}^n Y_i^*\,\mathbbm{1}(R_i=1)\mathbbm{1}(X_i=x)}
-{\sum_{i=1}^n \mathbbm{1}(R_i=1)\mathbbm{1}(X_i=x)}
+\frac{\sum_{i=1}^n Y_i^*\,\mathbbm{1}\{R_i=1\}\mathbbm{1}\{X_i=x\}}
+{\sum_{i=1}^n \mathbbm{1}\{R_i=1\}\mathbbm{1}\{X_i=x\}}
 \right)
 \left(
-\frac{\sum_{i=1}^n \mathbbm{1}(X_i=x)}{n}
+\frac{\sum_{i=1}^n \mathbbm{1}\{X_i=x\}}{n}
 \right).
 \]
 \end{frame}
@@ -515,7 +515,7 @@ $i$ & $X_{[1]i}$ & $X_{[2]i}$ & $\widehat{p}_R(X_i)$ & $Y_i(0)$ & \textcolor{Vio
 
 \vspace{0.2cm}
 \[
-\widehat{p}_R(X_i) = \frac{\sum_{i=1}^n R_i  \mathbbm{1}(X_{[1]i},X_{[2]i})}{\sum_{i=1}^n \mathbbm{1}(X_{[1]i},X_{[2]i})}
+\widehat{p}_R(X_i) = \frac{\sum_{i=1}^n R_i  \mathbbm{1}\{X_{[1]i},X_{[2]i}\}}{\sum_{i=1}^n \mathbbm{1}\{X_{[1]i},X_{[2]i}\}}
 \]
 \begin{table}[h]
 \centering
@@ -618,7 +618,7 @@ $i$ & $X_{[1]i}$ & $X_{[2]i}$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i
 \setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.15}
 \begin{tabular}{c|c|c|c|c|c|c|c}
-$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $p_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $\widehat{p}_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
 \cmidrule(lr){1-1}\cmidrule(lr){2-6}\cmidrule(lr){7-8}
 1 & A & 0 & \cellcolor{Contrast2l}0.33 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
 2 & A & 0 & \cellcolor{Contrast2l}0.33 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
@@ -640,7 +640,7 @@ $i$ & $X_{[1]i}$ & $X_{[2]i}$ & $p_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Vi
 \setlength{\tabcolsep}{5pt}
 \renewcommand{\arraystretch}{1.1}
 \begin{tabular}{c c c c}
-$X_{[1]}$ & $X_{[2]}$ & $n$ & $p_D(X)$ \\
+$X_{[1]}$ & $X_{[2]}$ & $n$ & $\widehat{p}_D(X)$ \\
 \cmidrule(lr){1-1}\cmidrule(lr){2-4}
 A & 0 & 3 & \cellcolor{Contrast2l}0.33 \\
 A & 1 & 2 & \cellcolor{Contrast6l}0.50 \\
@@ -711,7 +711,7 @@ D \not\!\perp M.
 \begin{wideitemize}
 \item Allow multi‑valued treatments: $D_i \in \Supp[D_i]$.\pause
 \item Generalized potential outcomes: $Y_i(d)$ for each $d \in \Supp[D_i]$.\pause
-\item Switching equation: $Y_i = \sum_{d \in \Supp[D_i]} Y_i(d)\,\mathbbm{1}(D_i=d)$.\pause
+\item Switching equation: $Y_i = \sum_{d \in \Supp[D_i]} Y_i(d)\,\mathbbm{1}\{D_i=d\}$.\pause
 \item Preview: generalized propensity scores summarize $\Pr[D_i=d \mid X_i]$.
 \end{wideitemize}
 \end{frame}

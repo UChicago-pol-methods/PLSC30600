@@ -1,0 +1,341 @@
+---
+title: "PLSC 30600 --- Homework 2"
+output:
+  pdf_document:
+    number_sections: false
+header-includes:
+  - "\\usepackage[margin=1in]{geometry}"
+  - "\\usepackage{amsmath, amssymb, amsthm}"
+  - "\\usepackage{bm}"
+  - "\\usepackage{booktabs}"
+  - "\\usepackage{enumitem}"
+  - "\\usepackage{hyperref}"
+  - "\\usepackage{tikz}"
+  - "\\usetikzlibrary{positioning}"
+  - "\\setlist[itemize]{noitemsep, topsep=2pt}"
+  - "\\setlist[enumerate]{itemsep=4pt, topsep=6pt}"
+  - "\\newcommand{\\E}{\\textrm{E}}"
+  - "\\newcommand{\\Y}{\\bm{Y}}"
+  - "\\newcommand{\\D}{\\bm{D}}"
+  - "\\newcommand{\\one}{\\bm{\\mathbf{1}}}"
+  - "\\newcommand{\\X}{\\bm{X}}"
+  - "\\newcommand{\\W}{\\bm{W}}"
+---
+\textbf{Due:} Sun, February 1 (11:59pm)
+
+\vspace{0.75em}
+
+\noindent \textbf{General instructions}
+\begin{itemize}
+  \item \textbf{Show your work} for all hand calculations. A final numeric answer without intermediate steps, formulas, and/or justification is not sufficient.
+  \item For coding problems, submit a reproducible script \texttt{(.R/.rmd/.rnw)} along with the fully compiled pdf. Set a random seed and report it.
+  \item Include a brief note describing how you used AI tools (if at all), consistent with the course AI policy.
+  \item For each proof question, start with one sentence naming the technique you are using
+(e.g., direct proof, Law of Iterated Expectations, bounding, counterexample, construction, contradiction).
+\end{itemize}
+
+\vspace{0.75em}
+\hrule
+\vspace{0.75em}
+
+\section*{Problem 0: Matrix algebra warm-up}
+
+\noindent For matrix \emph{addition}, add corresponding entries.
+For matrix \emph{multiplication}, use row-by-column dot products.
+For example, if
+\[
+A=
+\begin{bmatrix}
+a & b\\
+c & d
+\end{bmatrix},
+\quad
+B=
+\begin{bmatrix}
+e & f\\
+g & h
+\end{bmatrix},
+\]
+then
+\[
+A+B=
+\begin{bmatrix}
+a+e & b+f\\
+c+g & d+h
+\end{bmatrix},
+\quad
+AB=
+\begin{bmatrix}
+ae+bg & af+bh\\
+ce+dg & cf+dh
+\end{bmatrix}. 
+\]
+Write out at least one entry (e.g., the $(1,2)$ entry) step-by-step, such as
+\[
+(AB)_{12}=a\cdot f + b\cdot h.
+\]
+
+\begin{enumerate}[label=\textbf{0.\alph*}]
+  \item \textbf{Commutative law of addition.}
+  Let
+  \[
+  A=
+  \begin{bmatrix}
+  1 & 2\\
+  0 & 1
+  \end{bmatrix},
+  \quad
+  B=
+  \begin{bmatrix}
+  0 & 1\\
+  2 & 3
+  \end{bmatrix}.
+  \]
+  Compute $A+B$ and $B+A$ and verify that $A+B=B+A$.
+
+  \item \textbf{Multiplication is not commutative.}
+  Using the same $A$ and $B$, compute $AB$ and $BA$ and show that $AB\ne BA$.
+
+  \item \textbf{Associative laws.}
+  Let
+  \[
+  C=
+  \begin{bmatrix}
+  1 & -1\\
+  4 & 0
+  \end{bmatrix}.
+  \]
+  Verify $(A+B)+C=A+(B+C)$ and $(AB)C=A(BC)$.
+
+  \item \textbf{Distributive laws.}
+  Verify $A(B+C)=AB+AC$ and $(A+B)C=AC+BC$.
+
+  \item \textbf{Identity matrix.}
+  Let $I_2=\begin{bmatrix}1 & 0\\ 0 & 1\end{bmatrix}$.
+  Verify $AI_2=A$ and $I_2A=A$.
+\end{enumerate}
+
+\vspace{0.75em}
+\hrule
+\vspace{0.75em}
+
+\section*{Problem 1: Weighting estimators}
+
+\begin{enumerate}[label=\textbf{1.\alph*}]
+  \item \textbf{IPW formula.}
+  Let $p_D(X_i)\in(0,1)$ be the propensity score for unit $i$. The IPW estimator for the ATE is:
+  \[
+  \hat\tau_{\text{IPW}}=\frac{1}{n}\sum_{i=1}^n \left(\frac{D_i Y_i}{p_D(X_i)}-\frac{(1-D_i)Y_i}{1-p_D(X_i)}\right).
+  \]
+
+  \item \textbf{Numerical check.}
+  Suppose $n=4$ with
+  \[
+  \D=\begin{bmatrix}1\\1\\0\\0\end{bmatrix},\quad
+  \Y=\begin{bmatrix}5\\3\\2\\1\end{bmatrix},\quad
+  p_D(\X)=\begin{bmatrix}0.6\\0.6\\0.4\\0.4\end{bmatrix}.
+  \]
+  Compute $\hat\tau_{\text{IPW}}$.
+
+  \item \textbf{Compare to difference in means.}
+  Using the same four observations, compute the unweighted difference in means
+  $\bar{Y}_{D=1}-\bar{Y}_{D=0}$ and compare it to your IPW estimate.
+\end{enumerate}
+
+\vspace{0.75em}
+\hrule
+\vspace{0.75em}
+
+\section*{Problem 2: IPW proofs and identification}
+
+\begin{enumerate}[label=\textbf{2.\alph*}]
+  \item \textbf{Cell-balancing interpretation (discrete $X$).}
+  Assume $X$ takes finitely many values $x \in \mathcal{X}$. Let
+  \[
+  \mu_1(x)=\E[Y\mid D=1,X=x],\quad
+  \mu_0(x)=\E[Y\mid D=0,X=x],\quad
+  p(x)=\Pr[D=1\mid X=x].
+  \]
+  Show that
+  \[
+  \E\!\left[\frac{Y D}{p(X)}\right]
+  =
+  \sum_{x\in\mathcal{X}} \Pr[X=x]\;\mu_1(x),
+  \]
+  and
+  \[
+  \E\!\left[\frac{Y(1-D)}{1-p(X)}\right]
+  =
+  \sum_{x\in\mathcal{X}} \Pr[X=x]\;\mu_0(x).
+  \]
+  Conclude that the IPW estimand equals
+  \[
+  \sum_{x\in\mathcal{X}} \Pr[X=x]\big(\mu_1(x)-\mu_0(x)\big),
+  \]
+  and explain briefly why this corresponds to reweighting so treated/control have the same $X$-distribution.
+  (You may cite the identity from Theorem 7.2.5 in Aronow-Miller.)
+
+  \item \textbf{\underline{Optional} extension (ATT via weighting).}
+  Derive an analogous identity for the ATT:
+  \[
+    \E[Y(1)-Y(0)\mid D=1].
+  \]
+  Using weighting, show how to express the ATT in terms of observable quantities.
+  (The weights and normalization differ from the ATE case.)
+
+  \item \textbf{Where does it break?}
+  Construct a simple data-generating process with binary $X\in\{0,1\}$, binary $D$, and potential outcomes $Y(1),Y(0)$ such that:
+  \begin{enumerate}[label=(\roman*)]
+    \item positivity holds: $0<p(X)<1$ for both $X=0,1$,
+    \item ignorability fails: $(Y(1),Y(0))\not\!\perp D\mid X$.
+  \end{enumerate}
+  You may use a finite ``science table'' counterexample or a probability model.
+  
+  Compute both
+  \[
+  \E[\tau]=\E[Y(1)-Y(0)],
+  \qquad
+  \E\!\left[\frac{Y D}{p(X)}-\frac{Y(1-D)}{1-p(X)}\right],
+  \]
+  and show they differ. Refer to where the proof of Theorem 7.2.5 fails under your DGP.
+
+\end{enumerate}
+
+\vspace{0.75em}
+\hrule
+\vspace{0.75em}
+
+\section*{Problem 3: DAGs and post-treatment selection}
+
+Consider the DAG with observed pre-treatment covariates $X$, treatment $D$, outcome $Y$, and a post-treatment
+selection variable $S$:
+
+\begin{center}
+\begin{tikzpicture}[>=stealth, node distance=2.4cm]
+  \node (X) {$X$};
+  \node (D) [right=of X] {$D$};
+  \node (Y) [right=of D] {$Y$};
+  \node (S) [below=of D] {$S$};
+  \draw[->] (X) -- (D);
+  \draw[->, bend left=20] (X) to (Y);
+  \draw[->] (D) -- (Y);
+  \draw[->] (D) -- (S);
+  \draw[->] (Y) -- (S);
+\end{tikzpicture}
+\end{center}
+
+\begin{enumerate}[label=\textbf{3.\alph*}]
+  \item \textbf{Conditioning on a post-treatment collider.}
+  Suppose you estimate
+  \[
+  \E[Y\mid D=1,S=1]-\E[Y\mid D=0,S=1].
+  \]
+  Does this identify the average treatment effect (ATE) $\E[Y(1)-Y(0)]$?
+  Answer \emph{yes} or \emph{no} and justify briefly using DAG language
+  (e.g., d-separation / backdoor paths). If your answer is \emph{no}, name the noncausal path(s) that become(s) open when conditioning on $S$.
+
+  \item \textbf{What estimand (if any) is being targeted?}
+  Let $S(d)$ denote the potential selection status under treatment $d\in\{0,1\}$.
+  Consider the ``always-selected'' principal stratum $\{S(1)=1,\ S(0)=1\}$.
+  Is the quantity
+  \[
+  \E[Y\mid D=1,S=1]-\E[Y\mid D=0,S=1]
+  \]
+  equal to the principal-stratum causal effect
+  \[
+  \E\!\big[\,Y(1)-Y(0)\ \big|\ S(1)=1,\ S(0)=1\,\big] \ ? 
+  \]
+  Explain in 2--4 sentences. (If you think it can be given a causal interpretation only
+  under additional assumptions, state one such assumption.)
+\end{enumerate}
+
+
+\vspace{0.75em}
+\hrule
+\vspace{0.75em}
+
+\section*{Problem 4: LaLonde data}
+
+
+\textbf{Data.} Use the experimental LaLonde dataset:
+Download the file from github. \\
+
+\texttt{https://raw.githubusercontent.com/xuyiqing/lalonde/master/data/lalonde/nsw.dta}.
+
+The experimental NSW sample provides a randomized benchmark before introducing aditional adjustment methods.
+The outcome is \texttt{re78} and the treatment indicator is \texttt{treat}.
+
+| Variable | Description |
+|---|---|
+| \texttt{treat} | Treatment indicator (NSW program) |
+| \texttt{re78} | Earnings in 1978 (outcome) |
+| \texttt{re75} | Earnings in 1975 (pre-treatment) |
+| \texttt{age} | Age |
+| \texttt{education} | Years of education |
+| \texttt{black} | Indicator for Black |
+| \texttt{hispanic} | Indicator for Hispanic |
+| \texttt{married} | Indicator for married |
+| \texttt{nodegree} | Indicator for no high school degree |
+
+\noindent \textbf{Packages you may need:} \texttt{haven}, \texttt{hot.deck}, \texttt{estimatr}.
+
+\begin{verbatim}
+# You may need to run `install.packages(...)` first
+library(haven) # to read in Stata .dta files
+library(estimatr) # for lm_robust and lm_lin
+library(hot.deck) # for hot-deck imputation
+
+nsw_url <- "https://raw.githubusercontent.com/xuyiqing/lalonde/master/data/lalonde/nsw.dta"
+nsw <- read_dta(nsw_url)
+nsw <- as.data.frame(nsw)
+\end{verbatim}
+
+
+\begin{enumerate}[label=\textbf{4.\alph*}]
+  \item \textbf{Read and inspect.}
+  Load the dataset and report:
+  \begin{enumerate}[label=(\roman*)]
+    \item the number of treated and control units,
+    \item the mean of $Y$ in each group.
+  \end{enumerate}
+
+\vspace{0.5em}
+
+
+  \item \textbf{Difference in means.}
+  Compute the unadjusted difference-in-means estimate
+  $\widehat{\tau}_{\text{DM}}=\bar{Y}_{D=1}-\bar{Y}_{D=0}$.
+
+  \item \textbf{Propensity score estimation and overlap.}
+  Estimate the propensity score $\widehat{p}_D(X_i)=\Pr[D_i=1\mid X_i]$ using a logit model with \texttt{glm(..., family = binomial())}. Use the covariates \texttt{age}, \texttt{education}, \texttt{black}, \texttt{hispanic}, \texttt{married}, \texttt{nodegree}, and \texttt{re75}. After fitting the model, use \texttt{predict(..., type = "response")} to get propensity scores. Then plot treated vs control distributions (histograms or density plots) with the same x-axis limits to assess overlap.
+Comment on overlap.
+
+  \item \textbf{IPW estimator.}
+  Using the estimated propensity scores, compute the IPW ATE:
+  \[
+    \widehat{\tau}_{\text{IPW}}
+    =\frac{1}{n}\sum_{i=1}^n\left(\frac{D_iY_i}{\widehat{p}_D(X_i)}-\frac{(1-D_i)Y_i}{1-\widehat{p}_D(X_i)}\right).
+  \]
+  Compute an approximate 95\% confidence interval using the nonparametric bootstrap.
+  \textit{Hint:} include propensity score estimation inside each bootstrap resample.
+
+  \item \textbf{Hot-deck matching (propensity score).}
+Use the \texttt{hot.deck} package to impute counterfactual outcomes using the opposite treatment group as donors. Make sure to set a random seed. Use the estimated propensity score as the matching variable (instead of the full covariate set). One simple way is to set \texttt{re78} to \texttt{NA} for treated units (so controls are the only donors) and run hot-deck imputation, then repeat with \texttt{re78} set to \texttt{NA} for controls. Use the completed datasets to
+compute the ATE.
+
+  \item \textbf{Linear model with covariates.}
+  Fit a linear regression of $Y$ on $D$ and the covariates used in the propensity score model.
+  Report the coefficient on $D$ and interpret it as an adjusted ATE.
+
+  \item \textbf{Linear model with propensity score (estimatr).}
+  Fit a linear regression of $Y$ on $D$ and $\widehat{p}_D(X)$ using \texttt{estimatr::lm\_robust}.
+  Report the coefficient on $D$ and compare it to your earlier estimates.
+
+  \item \textbf{Lin estimator vs.\ by-hand.}
+  Use \texttt{estimatr::lm\_lin} to compute the regression-adjusted ATE.
+  Then demean the covariates, add treatment interactions, and estimate the same model using \texttt{lm\_robust}.
+  Compare the two estimates and confirm they match.
+
+  \item \textbf{Diagnostics.}
+  Briefly summarize what you learned from comparing the estimators in this problem (2--4 sentences).
+\end{enumerate}

@@ -35,8 +35,7 @@ header-includes:
 
 For each part below: (i) state the technique you are using (e.g., bounding, counterexample, construction, Law of Iterated Expectations),
 and (ii) write a clean argument. You may use the Law of Iterated Expectations without re-proving it.
-Use Aronow–Miller proofs as templates for identification arguments. 
-Use Hammack or Velleman for general proof strategies (counterexample, construction, bounding, contrapositive).
+Use Aronow–Miller proofs as \textit{direct} templates for identification arguments; the goal is to practice working through the steps of these proofs, not to come up with new techniques. 
 
 \begin{enumerate}[label=\textbf{0.\alph*}]
   \item \textbf{Bounding argument.}
@@ -355,88 +354,3 @@ Letting $B$ be the number of bootstrap resamples, use $B= 100$.
     \text{Lower bound},\quad \text{Upper bound},\quad \widehat{\mu}_{\text{MCAR}},\quad \widehat{\mu}_{\text{MAR}}.
   \]
 \end{enumerate}
-
-
-
-\clearpage
-\section*{Proof toolbox (how to write the proofs in this homework)}
-
-Several questions ask for short proofs. You do \emph{not} need advanced real analysis.
-Most proofs in this course use a small set of reusable techniques. For each proof question:
-\begin{itemize}
-  \item start with a one-line label: \textbf{Technique:} direct proof / Law of Iterated Expectations / bounding / counterexample / construction / contradiction,
-  \item then write a short, logically complete argument (a clear sequence of equalities/inequalities or implications).
-\end{itemize}
-
-\vspace{0.5em}
-\noindent \textbf{1) Direct proof (``assume the conditions, derive the claim'')}
-\begin{itemize}
-  \item \textbf{When to use:} the statement is of the form ``If assumptions A hold, then conclusion C holds.''
-  \item \textbf{Template:} Assume A. Start from the left-hand side of what you want to show. Use definitions and algebra
-  (and known facts like linearity of expectation) to rewrite it step-by-step until you obtain the desired expression. End with $\square$.
-\end{itemize}
-
-\vspace{0.5em}
-\noindent \textbf{2) Law of Iterated Expectations (LIE)}
-\begin{itemize}
-  \item \textbf{Key fact:} for any random variables $Y,X$,
-  \[
-    E[Y] = E\!\big(E[Y\mid X]\big).
-  \]
-  \item \textbf{When to use:} identification arguments where you want to rewrite an unconditional target
-  (like $E[Y]$ or $E[Y(d)]$) using conditional expectations you can relate to observables.
-  \item \textbf{Typical move:} write $E[Y]=E(E[Y\mid X])$, then use an assumption (e.g., MAR/ignorability)
-  to replace $E[Y\mid X]$ with something observable like $E[Y^*\mid R=1,X]$.
-\end{itemize}
-
-\vspace{0.5em}
-\noindent \textbf{3) Bounding (and ``sharpness'' via extremal cases)}
-\begin{itemize}
-  \item \textbf{When to use:} the target contains an unknown quantity that is only known to lie in an interval.
-  \item \textbf{Template:} Rewrite the target so the unknown piece is explicit (often via LIE),
-  then replace the unknown term by its minimum to get a lower bound and by its maximum to get an upper bound.
-  \item \textbf{Sharpness:} after deriving bounds, show they are the best possible by \emph{constructing} two
-  data-generating processes (or two completions of missing outcomes) that attain the lower and upper bounds.
-\end{itemize}
-
-\vspace{0.5em}
-\noindent \textbf{4) Counterexample (disproving a false general claim)}
-\begin{itemize}
-  \item \textbf{When to use:} the claim says ``for all'' (e.g., ``in general $E[Y(1)]=E[Y\mid D=1]$'').
-  \item \textbf{Template:} give one explicit joint distribution (or a small ``science table'') where the assumptions hold
-  but the conclusion fails. One example is enough.
-\end{itemize}
-
-\vspace{0.5em}
-\noindent \textbf{5) Construction (showing existence or attaining an extremum)}
-\begin{itemize}
-  \item \textbf{When to use:} you must show something \emph{can} happen (e.g., sharpness, or that two DGPs are observationally equivalent).
-  \item \textbf{Template:} explicitly define the object you need (e.g., fill in missing $Y$ values, or define a DGP for $Y\mid R=0$),
-  then verify it matches the observed data/assumptions.
-\end{itemize}
-
-\vspace{0.5em}
-\noindent \textbf{6) Proof by contradiction (assume the opposite, derive an impossibility)}
-\begin{itemize}
-  \item \textbf{When to use:} to show a condition is necessary, or to show an event is impossible.
-  \item \textbf{Template:} assume the negation of the statement you want, then derive a contradiction
-  (e.g., a probability $<0$ or $>1$, or two different values for something that should be unique).
-\end{itemize}
-
-\vspace{0.5em}
-\noindent \textbf{Common ``allowed moves'' in this course}
-\begin{itemize}
-  \item Linearity: $E[aY+bW]=aE[Y]+bE[W]$ (and similarly for conditional expectations).
-  \item Conditioning on a function adds no information if you already condition on the variable:
-  $E[U\mid X, g(X)] = E[U\mid X]$.
-  \item If $R\in\{0,1\}$ is binary, its conditional distribution is determined by $E[R\mid \cdot]$.
-  So to prove a conditional independence involving $R$, it often suffices to show an equality of conditional expectations.
-\end{itemize}
-
-\noindent \textbf{Where you have already seen these in the reading}
-\begin{itemize}
-  \item Bounding + sharpness for missing data (Manski bounds): see the sharp bounds theorem and proof. 
-  \item Law of Iterated Expectations + substitution under MAR/ignorability: see the MAR identification proofs.
-  \item Binary-variable trick + conditioning arguments: see the propensity score theorem proof.
-  \item Counterexample using a science table: see the post-treatment-variable example.
-\end{itemize}

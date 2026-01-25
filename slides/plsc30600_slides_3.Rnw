@@ -74,7 +74,7 @@ $i$ & $X_{[1]i}$ & $X_{[2]i}$ & $Y_i(0)$ & \textcolor{Violator1}{$R_i$} & \textc
 \end{wideitemize}
 \uncover<+->{\[
 \E[Y_i \mid X_{[1]i}, X_{[2]i}]
-= \beta_0 + \beta_1 \mathbf{1}\{X_{[1]i}=B\} + \beta_2 X_{[2]i}.
+= \beta_0 + \beta_1 \mathbbm{1}\{X_{[1]i}=B\} + \beta_2 X_{[2]i}.
 \]}
 \begin{wideitemize}
 \item \uncover<+->{Use regression to estimate, predict for all $i$, then average.}
@@ -133,7 +133,7 @@ $i$ & $X_{[1]i}$ & $X_{[2]i}$ & $Y_i(0)$ & \textcolor{Violator1}{$R_i$} & \textc
 \vspace{0.25cm}
 \[
 \E[Y_i \mid X_{[1]i}, X_{[2]i}]
-= \beta_0 + \beta_2 \mathbf{1}\{X_{[1]i}=B\} + \beta_3 X_{[2]i}.
+= \beta_0 + \beta_2 \mathbbm{1}\{X_{[1]i}=B\} + \beta_3 X_{[2]i}.
 \]
 \end{frame}
 
@@ -207,7 +207,7 @@ $i$ & $X_{[1]i}$ & $X_{[2]i}$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i
 \end{wideitemize}
 \[
 \E[Y_i \mid D_i, X_{[1]i}, X_{[2]i}]
-= \beta_0 + \beta_1 D_i + \beta_2 \mathbf{1}\{X_{[1]i}=B\} + \beta_3 X_{[2]i}.
+= \beta_0 + \beta_1 D_i + \beta_2 \mathbbm{1}\{X_{[1]i}=B\} + \beta_3 X_{[2]i}.
 \]
 \begin{wideitemize}
 \item Predict $\widehat{Y}_i(0)$ and $\widehat{Y}_i(1)$, then average differences.
@@ -289,7 +289,7 @@ $i$ & $X_{[1]i}$ & $X_{[2]i}$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i
 \vspace{0.25cm}
 \[
 \E[Y_i \mid D_i, X_{[1]i}, X_{[2]i}]
-= \beta_0 + \beta_1 D_i + \beta_2 \mathbf{1}\{X_{[1]i}=B\} + \beta_3 X_{[2]i}.
+= \beta_0 + \beta_1 D_i + \beta_2 \mathbbm{1}\{X_{[1]i}=B\} + \beta_3 X_{[2]i}.
 \]
 \end{frame}
 
@@ -836,103 +836,6 @@ restricting to the observed sample ($R=1$) can induce $D$--$Y$ association.
 \end{wideitemize}
 \end{frame}
 
-% -----------------------------------------------------------------------------%
-\begin{frame}[shrink=14]{Science table: strong ignorability and the propensity score}
-
-\begin{table}[h]
-\centering
-\small
-\setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.15}
-\begin{tabular}{c|c|c|c|c|c|c}
-$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
-\cmidrule(lr){1-1}\cmidrule(lr){2-5}\cmidrule(lr){6-7}
-1 & A & 0 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
-2 & A & 0 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
-3 & B & 0 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
-4 & B & 0 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
-5 & A & 1 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
-6 & A & 1 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
-7 & B & 1 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
-8 & B & 1 & \textcolor{red!40}{?} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
-9 & A & 0 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
-10 & B & 1 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
-\end{tabular}
-\end{table}
-\end{frame}
-
-%-------------------------------------------------------------------------------%
-\begin{frame}[shrink=14]{Science table: add the (empirical) propensity score}
-
-\begin{table}[h]
-\centering
-\small
-\setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.15}
-\begin{tabular}{c|c|c|c|c|c|c|c}
-$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $p_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
-\cmidrule(lr){1-1}\cmidrule(lr){2-6}\cmidrule(lr){7-8}
-1 & A & 0 & \cellcolor{Contrast2l}0.33 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
-2 & A & 0 & \cellcolor{Contrast2l}0.33 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
-3 & B & 0 & \cellcolor{Contrast6l}0.50 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
-4 & B & 0 & \cellcolor{Contrast6l}0.50 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
-5 & A & 1 & \cellcolor{Contrast6l}0.50 & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
-6 & A & 1 & \cellcolor{Contrast6l}0.50 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
-7 & B & 1 & \cellcolor{Contrast4l}0.67 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
-8 & B & 1 & \cellcolor{Contrast4l}0.67 & \textcolor{red!40}{?} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
-9 & A & 0 & \cellcolor{Contrast2l}0.33 & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
-10 & B & 1 & \cellcolor{Contrast4l}0.67 & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
-\end{tabular}
-\end{table}
-
-\vspace{0.2cm}
-\begin{table}[h]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{5pt}
-\renewcommand{\arraystretch}{1.1}
-\begin{tabular}{c c c c}
-$X_{[1]}$ & $X_{[2]}$ & $n$ & $p_D(X)$ \\
-\cmidrule(lr){1-1}\cmidrule(lr){2-4}
-A & 0 & 3 & \cellcolor{Contrast2l}0.33 \\
-A & 1 & 2 & \cellcolor{Contrast6l}0.50 \\
-B & 0 & 2 & \cellcolor{Contrast6l}0.50 \\
-B & 1 & 3 & \cellcolor{Contrast4l}0.67 \\
-\end{tabular}
-\end{table}
-\end{frame}
-
-%-------------------------------------------------------------------------------%
-\begin{frame}[shrink=14]{Science table: hot deck imputation (propensity score)}
-
-\begin{table}[h]
-\centering
-\small
-\setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.15}
-\begin{tabular}{c|c|c|c|c|c|c|c}
-$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $p_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
-\cmidrule(lr){1-1}\cmidrule(lr){2-6}\cmidrule(lr){7-8}
-1 & A & 0 & \cellcolor{Contrast2l}0.33 & 0 & \textcolor{red!40}{\textit{donor}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
-2 & A & 0 & \cellcolor{Contrast2l}0.33 & \textcolor{red!40}{\textit{donor}} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
-3 & B & 0 & \cellcolor{Contrast6l}0.50 & 1 & \textcolor{red!40}{\textit{donor}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
-4 & B & 0 & \cellcolor{Contrast6l}0.50 & \textcolor{red!40}{\textit{donor}} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
-5 & A & 1 & \cellcolor{Contrast6l}0.50 & 0 & \textcolor{red!40}{\textit{donor}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
-6 & A & 1 & \cellcolor{Contrast6l}0.50 & \textcolor{red!40}{\textit{donor}} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
-7 & B & 1 & \cellcolor{Contrast4l}0.67 & 1 & \textcolor{red!40}{\textit{donor}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
-8 & B & 1 & \cellcolor{Contrast4l}0.67 & \textcolor{red!40}{\textit{donor}} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
-9 & A & 0 & \cellcolor{Contrast2l}0.33 & 1 & \textcolor{red!40}{\textit{donor}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
-10 & B & 1 & \cellcolor{Contrast4l}0.67 & \textcolor{red!40}{\textit{donor}} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
-\end{tabular}
-\end{table}
-
-\vspace{0.2cm}
-\begin{wideitemize}
-\item For each missing potential outcome, choose a nearest-neighbor donor in $p_D(X)$ from the opposite treatment arm.
-\item Impute $\widehat{Y}_i(0)$ or $\widehat{Y}_i(1)$ with that donor's observed outcome.
-\end{wideitemize}
-\end{frame}
-%-------------------------------------------------------------------------------%
 \backupbegin
 %-------------------------------------------------------------------------------%
 

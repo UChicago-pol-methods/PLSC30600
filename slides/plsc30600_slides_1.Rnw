@@ -696,8 +696,8 @@ $i$ & $Y_i(0)$ & \textcolor{Violator1}{$R_i$} & \textcolor{Violator1}{$\widehat{
 \[
 \widehat{\E}[Y_i \mid R_i=1, X_i=x]
 =
-\frac{\sum_{i=1}^n Y_i^* R_i \mathbbm{1}(X_i=x)}
-{\sum_{i=1}^n R_i \mathbbm{1}(X_i=x)}
+\frac{\sum_{i=1}^n Y_i^* R_i \mathbbm{1}\{X_i=x\}}
+{\sum_{i=1}^n R_i \mathbbm{1}\{X_i=x\}}
 \]
 
 \end{frame}
