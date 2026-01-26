@@ -632,7 +632,7 @@ A \perp\!\!\!\perp C
 \begin{column}{0.48\textwidth}
 \begin{wideitemize}
 \item $M$ is a mediator: conditioning on $M$ blocks part of the causal effect, and gives us a conditional association, not a causal effect.
-\item If you want the \textbf{total effect} ($\Pr[Y|do(D=d)]$), $M$ is not in a backdoor adjustment set.
+\item If you want the \textbf{total effect} ($\Pr[Y\mid do(D=d)]$), $M$ is not in a backdoor adjustment set.
 \item More generally: descendants of $D$ are excluded by the backdoor criterion.
 \end{wideitemize}
 \end{column}

@@ -1,0 +1,455 @@
+% !Rnw weave = Sweave
+\documentclass[xcolor={dvipsnames}, handout]{beamer}
+
+\RequirePackage{../assets/pres-template_MOW}
+\usepackage{colortbl}
+\usepackage{calc} % enables \rowbase + #1\rowscale arithmetic
+
+% Row-height controls (tune these two numbers)
+\newlength{\rowbase}  \setlength{\rowbase}{1.4ex} % minimum row height
+\newlength{\rowscale} \setlength{\rowscale}{0.9ex} % extra height per 1 unit of n
+\newcommand{\nstrut}[1]{\rule{0pt}{\rowbase + #1\rowscale}}
+
+
+%--------------------------------------------------------------------------
+% Specific to this document ---------------------------------------
+
+%--------------------------------------------------------------------------
+% \setbeamercovered{transparent}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setlength{\tabcolsep}{1.3pt}
+\title{PLSC 30600}
+\subtitle{Week 4: More approaches to estimation}
+\date{Winter 2026}
+\author{Molly Offer-Westort}
+\institute{Department of Political Science, \\University of Chicago}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+<<setup, echo=FALSE, results=hide>>=
+set.seed(60637)
+@
+
+%-------------------------------------------------------------------------------%
+\frame{\titlepage
+\thispagestyle{empty}
+}
+
+%-------------------------------------------------------------------------------%
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[shrink=14]{Strong ignorability and the propensity score: estimation}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $p_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-6}\cmidrule(lr){7-8}
+1 & A & 0 & \textcolor{red!40}{?} & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \textcolor{red!40}{?} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+3 & B & 0 & \textcolor{red!40}{?} & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \textcolor{red!40}{?} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+5 & A & 1 & \textcolor{red!40}{?} & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \textcolor{red!40}{?} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+7 & B & 1 & \textcolor{red!40}{?} & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \textcolor{red!40}{?} & \textcolor{red!40}{?} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+9 & A & 0 & \textcolor{red!40}{?} & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+10 & B & 1 & \textcolor{red!40}{?} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+\end{tabular}
+\end{table}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}{Probit MLE: notation and log-likelihood \scriptsize \hfill (\citealt[Section 5.2.5]{aronow-miller_2019})}
+\small
+\begin{wideitemize}
+\item Data: $(Y_i, D_i, \X_i)$ i.i.d. observations of $(Y, D, \X)$, $D_i \in \{0,1\}$, \(X_i\in\mathbb{R}^{K+1}\) includes intercept. \pause 
+\item We want to predict $D$. Stack outcomes and regressors:
+\[
+\D=
+\begin{bmatrix}
+D_1\\
+D_2\\
+\vdots\\
+D_n
+\end{bmatrix}\text{, }
+\X_i=
+\begin{bmatrix}
+1\\
+X_{[1]i}\\
+X_{[2]i}\\
+\vdots\\
+X_{[K]i}
+\end{bmatrix},\]
+and
+\[
+\XX = 
+\begin{pmatrix}
+\X_1^\top \\ \X_2^\top\\ \dots \\ \X_n^\top
+\end{pmatrix}
+=
+\begin{pmatrix}
+1 & X_{[1]1} & X_{[2]1} & \dots & X_{[K]1} \\
+1 & X_{[1]2} & X_{[2]2} & \dots & X_{[K]2} \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+1 & X_{[1]n} & X_{[2]n} & \dots & X_{[K]n}
+\end{pmatrix}.
+\]
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}{Probit MLE: notation and log-likelihood}
+\small
+\begin{wideitemize}
+\item $D_i$ is binary, so conditional on \(X_i\), \(D_i \sim \mathrm{Bernoulli}(p_i)\), so the likelihood is
+\[
+\ll(\bB \mid \D, X)
+= \prod_{i=1}^n p_i^{D_i}(1-p_i)^{1-D_i}.
+\]
+\vspace{-3em}\pause
+\item Suppose that 
+\[\Pr[D=1\mid \X]= p(\X;\beta)=\Phi(\X^\top\beta),
+\text{ where } \bm{\beta} = \begin{bmatrix}
+\beta_0\\
+\beta_1\\
+\vdots\\
+\beta_K
+\end{bmatrix}.
+\]
+\vspace{-3em} \pause
+\item then the likelihood,
+\[
+\ll(\bB \mid \D ,\XX)=\prod_{i=1}^n \left(\Phi(\X_i^\top \bB)\right)^{D_i} \left(1-\Phi(\X_i^\top \bB)\right)^{1-D_i},
+\]
+log-likelihood, 
+\[
+\ell(\bB \mid \D,  \XX)= \log \ll(\bB \mid \D,  \XX)
+\]
+\[=\sum_{i=1}^n \left[ D_i \log\left(\Phi(\X_i^\top \bB)\right) + (1-D_i) \log\left(1-\Phi(\X_i^\top \bB)\right) \right],
+\]
+and MLE:
+\[
+\hat{\bm{\beta}}_{MLE} = \arg \max_{\bB \in \mathbb{R}^{K+1}} \ell(\bB \mid \D,  \XX).
+\]
+
+\end{wideitemize}
+
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Probit MLE: estimator and numerical solution}
+\small
+\begin{wideitemize}
+\item No closed form; we optimize numerically (Newton / quasi-Newton, e.g., BFGS).
+
+\item In code we usually minimize the negative log-likelihood:
+\[
+\hat\bB_{\text{MLE}} \in \arg\min_{\bB} \ \Big(-\ell(\bB\mid \D,\XX)\Big).
+\]\end{wideitemize}
+\end{frame}
+%-------------------------------------------------------------------------------%
+
+
+\begin{frame}[fragile]{Code: probit propensity scores (manual MLE)}
+\small
+<<probit-ps, echo=TRUE>>=
+df <- data.frame(
+  X_1 = c("A","A","B","B","A","A","B","B","A","B"),
+  X_2 = c(0,0,0,0,1,1,1,1,0,1),
+  D   = c(0,1,0,1,0,1,0,1,0,1),
+  Y   = c(0,1,1,1,0,1,1,0,0,1)
+)
+
+df$X_1 <- factor(df$X_1)
+
+X <- model.matrix(~ X_1 + X_2, data = df)
+head(X)
+
+# we are predicting *treatment*
+D <- df$D
+
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Code: probit propensity scores (manual MLE)}
+\small
+<<probit-ps, echo=TRUE>>=
+
+neg_loglik <- function(beta, X, D) {
+  eta <- as.vector(X %*% beta)
+  p <- pnorm(eta)
+  -sum(D * log(p) + (1 - D) * log(1 - p))
+}
+
+fit <- optim(
+  par = rep(0, ncol(X)),
+  fn = neg_loglik,
+  X = X,
+  D = D
+)
+
+round(beta_hat <- fit$par, 3)
+df$p_hat <- pnorm(as.vector(X %*% beta_hat))
+round(df$p_hat, 3)
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}[fragile]{Code: probit propensity scores (glm)}
+\small
+<<probit-ps-glm, echo=TRUE>>=
+fit_glm <- glm(D ~ X_1 + X_2, data = df, 
+               family = binomial(link = "probit"))
+
+df$p_hat_glm <- predict(fit_glm, type = "response")
+
+# are they different?
+round(cbind(manual = df$p_hat, glm = df$p_hat_glm), 3)
+max(abs(df$p_hat - df$p_hat_glm))
+@
+\end{frame}
+%-------------------------------------------------------------------------------%
+
+\begin{frame}[shrink=14]{Science table: hot deck imputation (propensity score matching)}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $p_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-6}\cmidrule(lr){7-8}
+1 & A & 0 & \cellcolor{Contrast2l}0.33 & 0 & \textcolor{Contrast2l}{\textit{(donor)}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \cellcolor{Contrast2l}0.33 & \textcolor{Contrast2l}{\textit{(donor)}} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+3 & B & 0 & \cellcolor{Contrast6l}0.50 & 1 & \textcolor{Contrast6l}{\textit{(donor)}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \cellcolor{Contrast6l}0.50 & \textcolor{Contrast6l}{\textit{(donor)}} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+5 & A & 1 & \cellcolor{Contrast6l}0.50 & 0 & \textcolor{Contrast6l}{\textit{(donor)}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \cellcolor{Contrast6l}0.50 & \textcolor{Contrast6l}{\textit{(donor)}} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+7 & B & 1 & \cellcolor{Contrast4l}0.67 & 1 & \textcolor{Contrast4l}{\textit{(donor)}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \cellcolor{Contrast4l}0.67 & \textcolor{Contrast4l}{\textit{(donor)}} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+9 & A & 0 & \cellcolor{Contrast2l}0.33 & 1 & \textcolor{Contrast2l}{\textit{(donor)}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+10 & B & 1 & \cellcolor{Contrast4l}0.67 & \textcolor{Contrast4l}{\textit{(donor)}} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+\end{tabular}
+\end{table}
+
+\vspace{0.2cm}
+\begin{wideitemize}
+\item For each missing potential outcome, choose a nearest-neighbor donor in $p_D(X)$ from the opposite treatment arm.
+\item Impute $\widehat{Y}_i(0)$ or $\widehat{Y}_i(1)$ with that donor's observed outcome.
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Code: hot deck imputation with \texttt{hot.deck}}
+\small
+<<hot-deck-code, echo=TRUE>>=
+library(hot.deck)
+
+# Impute missing Y(0) for treated units (D=1) using p_hat.
+df$Y0 <- ifelse(df$D == 0, df$Y, NA)
+imp0 <- hot.deck(df[, c("Y0", "p_hat")], 
+                 m = 1, method = "p.draw")
+df$Y0_imp <- imp0$data[[1]]$Y0
+
+# Impute missing Y(1) for control units (D=0) using p_hat.
+df$Y1 <- ifelse(df$D == 1, df$Y, NA)
+imp1 <- hot.deck(df[, c("Y1", "p_hat")], 
+                 m = 1, method = "p.draw")
+df$Y1_imp <- imp1$data[[1]]$Y1
+
+mean(df$Y1_imp - df$Y0_imp)
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{IPW: missing data (MAR)}
+\begin{wideitemize}
+\item Reweight observed outcomes by inverse response propensities.\pause
+\item Theorem (Aronow--Miller 6.2.6): if $Y_i \perp R_i \mid \X_i$, then\pause
+\end{wideitemize}
+\[
+\E[Y_i] = \E\!\left[\frac{Y_i^* R_i}{p_R(\X_i)}\right].
+\]
+\begin{wideitemize}
+\item Plug-in estimator:\pause
+\end{wideitemize}
+\[
+\widehat{\E}_{IPW}[Y_i] = \frac{1}{n}\sum_{i=1}^n \frac{Y_i^* R_i}{\hat p_R(\X_i)}.
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{IPW: causal effects (strong ignorability)}
+\begin{wideitemize}
+\item With $D_i \in \{0,1\}$ and $p_D(X_i)=\Pr[D_i=1\mid X_i]$,\pause
+\item Theorem (Aronow--Miller 7.2.5):\pause
+\end{wideitemize}
+\[
+\E[\tau_i] = \E\!\left[\frac{Y_i D_i}{p_D(X_i)} - \frac{Y_i(1-D_i)}{1-p_D(X_i)}\right].
+\]
+\begin{wideitemize}
+\item Plug-in estimator:\pause
+\end{wideitemize}
+\[
+\widehat{\E}_{IPW}[\tau_i] =
+\frac{1}{n}\sum_{i=1}^n \left(\frac{Y_i D_i}{\hat p_D(X_i)} - \frac{Y_i(1-D_i)}{1-\hat p_D(X_i)}\right).
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[shrink=10]{IPW: creating a pseudo-population}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.0} % keep at 1.0 since we're controlling height manually
+
+% ---------- Cell-level summary table ----------
+\begin{table}[h]
+\centering
+\begin{tabular}{c c c c c c}
+$X_{[1]}$ & $X_{[2]}$ & $n$ & $\hat p_D(X)$ &
+$n_1$ (treated) & $n_0$ (control) \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-6}
+A & 0 & \nstrut{3}3 & \cellcolor{Contrast2l}0.33 & 1 & 2 \\
+A & 1 & \nstrut{2}2 & \cellcolor{Contrast6l}0.50 & 1 & 1 \\
+B & 0 & \nstrut{2}2 & \cellcolor{Contrast6l}0.50 & 1 & 1 \\
+B & 1 & \nstrut{3}3 & \cellcolor{Contrast4l}0.67 & 2 & 1 \\
+\end{tabular}
+\end{table}
+
+\vspace{-0.2cm}
+
+% ---------- IPW "pseudo-count" table ----------
+\begin{table}[h]
+\centering
+\begin{tabular}{c c c c c c}
+$X_{[1]}$ & $X_{[2]}$ & $n$ & $\hat p_D(X)$ &
+$\sum_{i: D_i=1}\frac{1}{\hat p_D(X_i)}$ &
+$\sum_{i: D_i=0}\frac{1}{1-\hat p_D(X_i)}$ \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-6}
+A & 0 & \nstrut{3}3 & \cellcolor{Contrast2l}0.33 & $1/0.33 \approx 3$ & $2/0.67 \approx 3$ \\
+A & 1 & \nstrut{2}2 & \cellcolor{Contrast6l}0.50 & $1/0.50 = 2$ & $1/0.50 = 2$ \\
+B & 0 & \nstrut{2}2 & \cellcolor{Contrast6l}0.50 & $1/0.50 = 2$ & $1/0.50 = 2$ \\
+B & 1 & \nstrut{3}3 & \cellcolor{Contrast4l}0.67 & $2/0.67 \approx 3$ & $1/0.33 \approx 3$ \\
+\end{tabular}
+\end{table}
+
+\vspace{-0.1cm}
+\begin{wideitemize}\footnotesize
+\item Interpretation: IPW creates a pseudo-population where, within each cell, treated and control have equal weighted mass.
+\end{wideitemize}
+\end{frame}
+
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Code: IPW ATE by hand (using $\hat p_D$)}
+\small
+<<ipw-ate, echo=TRUE>>=
+ipw_term <- (df$Y * df$D / df$p_hat) -
+  (df$Y * (1 - df$D) / (1 - df$p_hat))
+
+ipw_ate <- mean(ipw_term)
+ipw_ate
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{IPW: practical cautions}
+\begin{wideitemize}
+\item Extreme weights when $\hat p_D(X_i)$ is near 0 or 1.\pause
+\item Overlap diagnostics are essential before weighting.\pause
+\item IPW variance can be large; stabilized weights can help.
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Why adjust in an RCT?}
+\begin{wideitemize}
+\item Randomization targets unbiasedness, not necessarily precision.\pause
+\item Finite-sample imbalance is common; regression can improve precision.\pause
+\item Caveat: specification matters for valid inference.
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Freedman vs.\ Lin}
+\begin{wideitemize}
+\item Freedman (2008): naive regression adjustment can worsen precision or SEs. \hfill \cite{freedman_2008}\pause
+\item Lin (2013): fully interacted model + robust SEs restores design-based validity. \hfill \cite{lin_2013}
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Regression adjustment with interactions}
+\begin{wideitemize}
+\item Treatment indicator $D_i$, covariates $\X_i$\pause, mean-centered covariates $\tilde\X_i$
+\item Fully interacted model:
+\end{wideitemize}
+\[
+Y_i = \alpha + \tau D_i + \X_i^\top \bm{\beta} + (D_i \cdot \tilde\X_i)^\top \bm{\gamma} + \varepsilon_i.
+\]
+\begin{wideitemize}
+\item The adjusted ATE is $\hat\tau$ from this regression.
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Prediction view of the adjusted ATE}
+\begin{wideitemize}
+\item Use the fitted model to predict $\widehat{Y}_i(1)$ and $\widehat{Y}_i(0)$.\pause
+\item Then
+\[
+\widehat{\text{ATE}} = \frac{1}{n}\sum_{i=1}^n \big(\widehat{Y}_i(1)-\widehat{Y}_i(0)\big).
+\]
+\item Equivalent to the treatment coefficient in the interacted model.
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Code: \texttt{estimatr::lm\_lin}}
+\small
+<<lm-lin-code, echo=TRUE>>=
+library(estimatr)
+
+fit_lin <- lm_lin(Y ~ D, covariates = ~ X_1 + X_2, data = df)
+fit_lin
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Code: \texttt{estimatr::lm\_lin}}
+\small
+<<lm-lin-code, echo=TRUE>>=
+library(estimatr)
+lm_0 <- lm_robust(Y ~ X_1 + X_2, data = df[which(df$D == 0), ])
+lm_1 <- lm_robust(Y ~ X_1 + X_2, data = df[which(df$D == 1), ])
+
+Y0 <- predict(lm_0, newdata = df)
+Y1 <- predict(lm_1, newdata = df)
+mean(Y1 - Y0)
+
+fit_lin$coefficients['D']
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\backupbegin
+%-------------------------------------------------------------------------------%
+\begin{frame}[allowframebreaks]{References}
+\bibliographystyle{apalike}
+\bibliography{../assets/PLSC30600}
+\end{frame}
+%-------------------------------------------------------------------------------%
+\backupend
+\end{document}
