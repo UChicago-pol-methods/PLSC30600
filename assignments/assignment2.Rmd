@@ -262,7 +262,7 @@ Download the file from github. \\
 
 \texttt{https://raw.githubusercontent.com/xuyiqing/lalonde/master/data/lalonde/nsw.dta}.
 
-The experimental NSW sample provides a randomized benchmark before introducing aditional adjustment methods.
+The experimental NSW sample provides a randomized benchmark before introducing additional adjustment methods.
 The outcome is \texttt{re78} and the treatment indicator is \texttt{treat}.
 
 | Variable | Description |
