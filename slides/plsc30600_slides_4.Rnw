@@ -228,7 +228,7 @@ max(abs(df$p_hat - df$p_hat_glm))
 \setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.15}
 \begin{tabular}{c|c|c|c|c|c|c|c}
-$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $p_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $\hat p_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
 \cmidrule(lr){1-1}\cmidrule(lr){2-6}\cmidrule(lr){7-8}
 1 & A & 0 & \cellcolor{Contrast2l}0.33 & 0 & \textcolor{Contrast2l}{\textit{(donor)}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
 2 & A & 0 & \cellcolor{Contrast2l}0.33 & \textcolor{Contrast2l}{\textit{(donor)}} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
@@ -292,18 +292,18 @@ mean(df$Y1_imp - df$Y0_imp)
 %-------------------------------------------------------------------------------%
 \begin{frame}{IPW: causal effects (strong ignorability)}
 \begin{wideitemize}
-\item With $D_i \in \{0,1\}$ and $p_D(X_i)=\Pr[D_i=1\mid X_i]$,\pause
+\item With $D_i \in \{0,1\}$ and $p_D(\X_i)=\Pr[D_i=1\mid \X_i]$,\pause
 \item Theorem (Aronow--Miller 7.2.5):\pause
 \end{wideitemize}
 \[
-\E[\tau_i] = \E\!\left[\frac{Y_i D_i}{p_D(X_i)} - \frac{Y_i(1-D_i)}{1-p_D(X_i)}\right].
+\E[\tau_i] = \E\!\left[\frac{Y_i D_i}{p_D(\X_i)} - \frac{Y_i(1-D_i)}{1-p_D(\X_i)}\right].
 \]
 \begin{wideitemize}
 \item Plug-in estimator:\pause
 \end{wideitemize}
 \[
 \widehat{\E}_{IPW}[\tau_i] =
-\frac{1}{n}\sum_{i=1}^n \left(\frac{Y_i D_i}{\hat p_D(X_i)} - \frac{Y_i(1-D_i)}{1-\hat p_D(X_i)}\right).
+\frac{1}{n}\sum_{i=1}^n \left(\frac{Y_i D_i}{\hat p_D(\X_i)} - \frac{Y_i(1-D_i)}{1-\hat p_D(\X_i)}\right).
 \]
 \end{frame}
 
@@ -335,8 +335,8 @@ B & 1 & \nstrut{3}3 & \cellcolor{Contrast4l}0.67 & 2 & 1 \\
 \centering
 \begin{tabular}{c c c c c c}
 $X_{[1]}$ & $X_{[2]}$ & $n$ & $\hat p_D(X)$ &
-$\sum_{i: D_i=1}\frac{1}{\hat p_D(X_i)}$ &
-$\sum_{i: D_i=0}\frac{1}{1-\hat p_D(X_i)}$ \\
+$\sum_{i: D_i=1}\frac{1}{\hat p_D(\X_i)}$ &
+$\sum_{i: D_i=0}\frac{1}{1-\hat p_D(\X_i)}$ \\
 \cmidrule(lr){1-1}\cmidrule(lr){2-6}
 A & 0 & \nstrut{3}3 & \cellcolor{Contrast2l}0.33 & $1/0.33 \approx 3$ & $2/0.67 \approx 3$ \\
 A & 1 & \nstrut{2}2 & \cellcolor{Contrast6l}0.50 & $1/0.50 = 2$ & $1/0.50 = 2$ \\
@@ -365,9 +365,76 @@ ipw_ate
 \end{frame}
 
 %-------------------------------------------------------------------------------%
+\begin{frame}{IPW in matrix notation}
+\small
+
+\[
+\XX=\begin{bmatrix}\X_1^\top\\ \vdots\\ \X_n^\top\end{bmatrix}\in\mathbb{R}^{n\times k},\quad
+\Y=\begin{bmatrix}Y_1\\ \vdots\\ Y_n\end{bmatrix}\in\mathbb{R}^{n},\quad
+\D=\begin{bmatrix}D_1\\ \vdots\\ D_n\end{bmatrix}\in\{0,1\}^{n},\quad
+\one=\begin{bmatrix}1\\ \vdots\\ 1 \end{bmatrix}\in\mathbb{R}^{n}.
+\]
+
+Row-wise estimated propensity scores:
+\[
+\hat{\p}=\hat p_D(\XX):=
+\begin{bmatrix}
+\hat p_D(\X_1)\\ \vdots\\ \hat p_D(\X_n)
+\end{bmatrix}\in(0,1)^n .
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{IPW in matrix notation}
+\small
+Let $\oslash$ denote elementwise division. Define diagonal weight matrices
+\[
+\W_1=\operatorname{diag}\!\big(\D\oslash \hat{\p}\big),\qquad
+\W_0=\operatorname{diag}\!\big((\one-\D)\oslash(\one-\hat{\p})\big).
+\]
+i.e., 
+$\mathrm{diag}(\cdot)$ places the weights on the diagonal so each $Y_i$ is reweighted separately.
+\scriptsize
+\[
+\W_1=
+\begin{bmatrix}
+\frac{D_1}{\hat p_D(\X_1)} & 0 & \cdots & 0\\
+0 & \frac{D_2}{\hat p_D(\X_2)} & \cdots & 0\\
+\vdots & \vdots & \ddots & \vdots\\
+0 & 0 & \cdots & \frac{D_n}{\hat p_D(\X_n)}
+\end{bmatrix},
+\quad
+\W_0=
+\begin{bmatrix}
+\frac{1-D_1}{1-\hat p_D(\X_1)} & 0 & \cdots & 0\\
+0 & \frac{1-D_2}{1-\hat p_D(\X_2)} & \cdots & 0\\
+\vdots & \vdots & \ddots & \vdots\\
+0 & 0 & \cdots & \frac{1-D_n}{1-\hat p_D(\X_n)}
+\end{bmatrix}.
+\]
+
+\small
+
+IPW ATE (Horvitz--Thompson form):
+\[
+\hat\tau_{\mathrm{IPW}}
+=\frac{1}{n}\,\one^\top (\W_1-\W_0)\Y
+=\frac{1}{n}\sum_{i=1}^n\left(\frac{D_iY_i}{\hat p_D(\X_i)}-\frac{(1-D_i)Y_i}{1-\hat p_D(\X_i)}\right).
+\]
+
+% (Optional) normalized/H\'ajek version:
+% \[
+% \hat\tau_{\mathrm{IPW}}^{H}
+% =\frac{\one^\top W_1\Y}{\one^\top W_1\one}
+% -\frac{\one^\top W_0\Y}{\one^\top W_0\one}.
+% \]
+
+\end{frame}
+%-------------------------------------------------------------------------------%
+
 \begin{frame}{IPW: practical cautions}
 \begin{wideitemize}
-\item Extreme weights when $\hat p_D(X_i)$ is near 0 or 1.\pause
+\item Extreme weights when $\hat p_D(\X_i)$ is near 0 or 1.\pause
 \item Overlap diagnostics are essential before weighting.\pause
 \item IPW variance can be large; stabilized weights can help.
 \end{wideitemize}
