@@ -1,6 +1,6 @@
 ---
 title: "Week 4: Sample Balance and Regression Adjustment"
-author: "Your Name Here"
+author: "Maggie X. Wang"
 date: "2026-01-30"
 output: html_document
 ---
@@ -28,7 +28,7 @@ Key variables
 
 ```{r}
 # change to your directory name
-ck <- read.csv("../card-krueger.csv")
+ck <- read.csv("/Users/maggiewang/Desktop/causal TA/sections/w4/card-krueger.csv")
 
 # identify observations that have our outcome of interest 
 idx <- intersect(
@@ -63,7 +63,7 @@ Let us first try to specify more elaborate models that may approximate the condi
 ```{r}
 # Specify a linear model by adding covariates (avoid interaction terms for simplicity)
 m_linear <- lm_robust(
-  fte ~ nj + ,
+  fte ~ nj + bk + kfc + roys + wendys + co_owned + hrsopen,
   data = ck0
 )
 m_linear
@@ -72,7 +72,8 @@ m_linear
 ```{r}
 # Using the same covariates you used in m_linear, specify a more flexible model with quadratic terms
 m_quad <- lm_robust(
-  fte ~ nj + ,
+  fte ~ nj + bk + kfc + roys + wendys + co_owned +
+    I(hrsopen^2),
   data = ck0
 )
 m_quad
@@ -90,17 +91,27 @@ We are trying to predict `nj` using the same covariates you used before in m_lin
 
 ```{r}
 # Do so using glm
+p_score <- glm(
+  nj ~ bk + kfc + roys + wendys + co_owned + hrsopen,
+  data = ck0,
+  family = binomial(link = "probit")
+)
 
+ck0$pscore <- predict(p_score, type = "response")
+summary(ck0$pscore)
 ```
 
 ```{r}
-# Then, do the same manually using MLE - complete the code
+# Then, do the same manually using MLE
 
 ## Build treatment vector D
 D <- ck0$nj
 
 ## Build design matrix X
-X <- 
+X <- model.matrix(
+  ~ bk + kfc + roys + wendys + co_owned + hrsopen,
+  data = ck0
+)
 
 ## Negative log-likelihood for probit
 neg_loglik <- function(beta, X, D) {
@@ -108,17 +119,20 @@ neg_loglik <- function(beta, X, D) {
   p   <- pnorm(eta)
   
   # fill in the log likelihood function below
-  
+  -sum(D * log(p) + (1 - D) * log(1 - p)) 
 }
 
 ## Optimize using optim()
 fit <- optim(
-  
+  par = rep(0, ncol(X)),
+  fn  = neg_loglik,
+  X   = X,
+  D   = D
 )
 
 ## Compute propensity scores from MLE
 beta_hat <- fit$par
-ck0$pscore_mle <- 
+ck0$pscore_mle <- pnorm(as.vector(X %*% beta_hat))
 summary(ck0$pscore_mle)
 ```
 
@@ -127,7 +141,6 @@ Check that the two approaches yield the same propensity scores.
 ## 2.2 Recover the IPW ATE
 
 ```{r}
-# Same as code from slides
 ipw_term <- (ck0$fte * ck0$nj / ck0$pscore) -
 + (ck0$fte * (1 - ck0$nj) / (1 - ck0$pscore))
 ipw_ate <- mean(ipw_term)
@@ -139,7 +152,11 @@ ipw_ate
 
 ```{r}
 # Construct weights
-ck0$weight <- 
+ck0$weight <- ifelse(
+  ck0$nj == 1,
+  1 / ck0$pscore,
+  1 / (1 - ck0$pscore)
+)
 ```
 
 ```{r}
@@ -147,11 +164,10 @@ ck0$weight <-
 m_simple_ipw <- lm_robust(fte ~ nj, data = ck0, weights = weight)
 m_simple_ipw
 ```
-
 ```{r}
 # Rerun your linear model, just with weights
 m_linear_ipw <- lm_robust(
-  fte ~ nj + , # Fill in with the same covariates you used
+  fte ~ nj + bk + kfc + roys + wendys + co_owned + hrsopen,
   data = ck0,
   weights = weight
 )
@@ -161,7 +177,8 @@ m_linear_ipw
 ```{r}
 # Rerun your quadratic model, just with weights
 m_quad_ipw <- lm_robust(
-  fte ~ nj + , # Fill in with the same covariates you used
+  fte ~ nj + bk + kfc + roys + wendys + co_owned +
+    I(hrsopen^2),
   data = ck0,
   weights = weight
 )
@@ -179,14 +196,13 @@ In other words, how do we use regression to estimate $E[Y_i(1)|X_i]$ and $E[Y_i(
 
 ```{r}
 # Estimate two fully specified regressions, one for nj==1, one for nj==0
-
 mu_1 <- lm_robust(
-  fte ~ , # Fill in with the same covariates you used
+  fte ~ bk + kfc + roys + wendys + co_owned + hrsopen,
   data = ck0 %>% filter(nj == 1)
 )
 
 mu_0 <- lm_robust(
-  fte ~ , # Fill in with the same covariates you used
+  fte ~ bk + kfc + roys + wendys + co_owned + hrsopen,
   data = ck0 %>% filter(nj == 0)
 )
 
@@ -202,10 +218,10 @@ ra_ate
 ## 4.2 The Lin Estimator
 
 ```{r}
-# Recover the regression-adjusted ATE using the Lin estimator
+# Lin estimator
 lin_ate <- lm_lin(
   fte ~ nj,
-  covariates = ~ , # Fill in with the same covariates you used
+  covariates = ~ bk + kfc + roys + wendys + co_owned + hrsopen,
   data = ck0
 )
 
