@@ -1,0 +1,214 @@
+---
+title: "Week 4: Sample Balance and Regression Adjustment"
+author: "Your Name Here"
+date: "2026-01-30"
+output: html_document
+---
+
+```{r}
+set.seed(30600)
+
+library(dplyr)
+library(estimatr)
+```
+
+# 0. Set Up
+
+Card and Krueger (1994) studied whether raising the minimum wage reduces employment using a natural experiment. In 1992, New Jersey raised its minimum wage, but nearby state Pennsylvania did not. The authors compared how full-time employment changed in fast-food restaurants in NJ versus in PA following the change to determine the effect of the change. These restaurants were selected for the comparison because they were geographically close, economically similar, and both heavily affected by minimum wage policy.
+
+Citation: Card, D. and Krueger, A. B. (1994). Minimum Wages and Employment: A Case Study of the Fast-Food Industry in New Jersey and Pennsylvania. American Economic Review.
+
+Data: https://github.com/UChicago-pol-methods/PLSC30600/blob/main/data/card-krueger.csv
+Data dictionary: https://github.com/UChicago-pol-methods/PLSC30600/blob/main/data/card-krueger_readme.txt
+
+Key variables
+* Outcome of interest: change in `fte`, full time-equivalent employees
+* Treatment: `d=1` if after nj min wage increase
+* `nj=1` in New Jersey (as opposed to Pennsylvania)
+
+```{r}
+# change to your directory name
+ck <- read.csv("../card-krueger.csv")
+
+# identify observations that have our outcome of interest 
+idx <- intersect(
+  ck$id[which(ck$d == 0 & !is.na(ck$fte))],
+  ck$id[which(ck$d == 1 & !is.na(ck$fte))]
+)
+
+ck <- ck[which(ck$id %in% idx), ]
+```
+
+Note, there is a design imbalance: even when we look at pre-treatment data, i.e., the treatment has not been administered, there is a difference between the number of full-time employees in NJ versus in PA.
+
+```{r}
+# First wave only (pre-treatment)
+ck0 <- ck[which(ck$d == 0), ]
+
+# naive difference in means
+diff_means <- with(ck0, mean(fte[nj == 1]) - mean(fte[nj == 0]))
+diff_means
+```
+
+```{r}
+# this difference is also statistically distinguishable from zero
+m_simple <- lm_robust(fte ~ nj, data = ck0)
+m_simple
+```
+
+# 1. Model Specification
+
+Let us first try to specify more elaborate models that may approximate the conditional expectation function for the outcome better.
+
+```{r}
+# Specify a linear model by adding covariates (avoid interaction terms for simplicity)
+m_linear <- lm_robust(
+  fte ~ nj + ,
+  data = ck0
+)
+m_linear
+```
+
+```{r}
+# Using the same covariates you used in m_linear, specify a more flexible model with quadratic terms
+m_quad <- lm_robust(
+  fte ~ nj + ,
+  data = ck0
+)
+m_quad
+```
+Compare the three models; if they give different estimates, how do you decide which one is more correct?
+
+
+# 2. Sample Balance
+
+Let us then try to improve our estimation by creating a pseudo-population from our sample using inverse propensity score weighting.
+
+## 2.1 Propensity Score
+
+We are trying to predict `nj` using the same covariates you used before in m_linear.
+
+```{r}
+# Do so using glm
+
+```
+
+```{r}
+# Then, do the same manually using MLE - complete the code
+
+## Build treatment vector D
+D <- ck0$nj
+
+## Build design matrix X
+X <- 
+
+## Negative log-likelihood for probit
+neg_loglik <- function(beta, X, D) {
+  eta <- as.vector(X %*% beta)
+  p   <- pnorm(eta)
+  
+  # fill in the log likelihood function below
+  
+}
+
+## Optimize using optim()
+fit <- optim(
+  
+)
+
+## Compute propensity scores from MLE
+beta_hat <- fit$par
+ck0$pscore_mle <- 
+summary(ck0$pscore_mle)
+```
+
+Check that the two approaches yield the same propensity scores.
+
+## 2.2 Recover the IPW ATE
+
+```{r}
+# Same as code from slides
+ipw_term <- (ck0$fte * ck0$nj / ck0$pscore) -
++ (ck0$fte * (1 - ck0$nj) / (1 - ck0$pscore))
+ipw_ate <- mean(ipw_term)
+ipw_ate
+```
+
+
+# 3. Re-Estimate Outcome Models Using A IPW-Balanced Sample
+
+```{r}
+# Construct weights
+ck0$weight <- 
+```
+
+```{r}
+# Rerun the simple difference in means model, just with weights
+m_simple_ipw <- lm_robust(fte ~ nj, data = ck0, weights = weight)
+m_simple_ipw
+```
+```{r}
+# Rerun your linear model, just with weights
+m_linear_ipw <- lm_robust(
+  fte ~ nj + , # Fill in with the same covariates you used
+  data = ck0,
+  weights = weight
+)
+m_linear_ipw
+```
+
+```{r}
+# Rerun your quadratic model, just with weights
+m_quad_ipw <- lm_robust(
+  fte ~ nj + , # Fill in with the same covariates you used
+  data = ck0,
+  weights = weight
+)
+m_quad_ipw
+```
+
+Compare how the estimates in `m_simple` differs from `m_linear` and `m_quad`, to how the estimates in `m_simple_ipw` differs from `m_linear_ipw` and `m_quad_ipw.` What do you see?
+
+
+# 4. Regression Adjustment
+
+## 4.1 Regression as a tool to estimate causal effect versus as a tool for prediction
+
+In other words, how do we use regression to estimate $E[Y_i(1)|X_i]$ and $E[Y_i(0)|X_i]$ instead of $E[Y_i|X_i]$?
+
+```{r}
+# Estimate two fully specified regressions, one for nj==1, one for nj==0
+
+mu_1 <- lm_robust(
+  fte ~ , # Fill in with the same covariates you used
+  data = ck0 %>% filter(nj == 1)
+)
+
+mu_0 <- lm_robust(
+  fte ~ , # Fill in with the same covariates you used
+  data = ck0 %>% filter(nj == 0)
+)
+
+# Predict onto full sample
+ck0$y1_hat <- predict(mu_1, newdata = ck0)
+ck0$y0_hat <- predict(mu_0, newdata = ck0)
+
+# Recover the regression adjusted ATE
+ra_ate <- mean(ck0$y1_hat) - mean(ck0$y0_hat)
+ra_ate
+```
+
+## 4.2 The Lin Estimator
+
+```{r}
+# Recover the regression-adjusted ATE using the Lin estimator
+lin_ate <- lm_lin(
+  fte ~ nj,
+  covariates = ~ , # Fill in with the same covariates you used
+  data = ck0
+)
+
+lin_ate
+```
+
+How do these two regression-adjusted ATE estimates compare?
