@@ -1,0 +1,430 @@
+% !Rnw weave = Sweave
+\documentclass[xcolor={dvipsnames}, handout]{beamer}
+
+\RequirePackage{../assets/pres-template_MOW}
+\usepackage{colortbl}
+\usepackage{calc}
+
+% Row-height controls (tune these two numbers)
+\newlength{\rowbase}  \setlength{\rowbase}{1.4ex} % minimum row height
+\newlength{\rowscale} \setlength{\rowscale}{0.9ex} % extra height per 1 unit of n
+\newcommand{\nstrut}[1]{\rule{0pt}{\rowbase + #1\rowscale}}
+
+%--------------------------------------------------------------------------
+% Specific to this document ---------------------------------------
+
+%--------------------------------------------------------------------------
+% \setbeamercovered{transparent}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setlength{\tabcolsep}{1.3pt}
+\title{PLSC 30600}
+\subtitle{Week 5: More estimation. Overlap and positivity.}
+\date{Winter 2026}
+\author{Molly Offer-Westort}
+\institute{Department of Political Science, \\University of Chicago}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+<<setup, echo=FALSE, results=hide>>=
+set.seed(60637)
+library(ggplot2)
+@
+
+%-------------------------------------------------------------------------------%
+\frame{\titlepage
+\thispagestyle{empty}
+}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[shrink=14]{Science table: strong ignorability and the propensity score}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $p_D(\X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-6}\cmidrule(lr){7-8}
+1 & A & 0 & \textcolor{red!40}{?} & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+2 & A & 0 & \textcolor{red!40}{?} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+3 & B & 0 & \textcolor{red!40}{?} & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+4 & B & 0 & \textcolor{red!40}{?} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+5 & A & 1 & \textcolor{red!40}{?} & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+6 & A & 1 & \textcolor{red!40}{?} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+7 & B & 1 & \textcolor{red!40}{?} & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} \\
+8 & B & 1 & \textcolor{red!40}{?} & \textcolor{red!40}{?} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} \\
+9 & A & 0 & \textcolor{red!40}{?} & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
+10 & B & 1 & \textcolor{red!40}{?} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
+\end{tabular}
+\end{table}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Code: science table data}
+\small
+<<science-table, echo=TRUE>>=
+df <- data.frame(
+  X_1 = c("A","A","B","B","A","A","B","B","A","B"),
+  X_2 = c(0,0,0,0,1,1,1,1,0,1),
+  D   = c(0,1,0,1,0,1,0,1,0,1),
+  Y   = c(0,1,1,1,0,1,1,0,0,1)
+)
+
+df$X_1 <- factor(df$X_1)
+
+# propensity model (same as week 4)
+X <- model.matrix(~ X_1 + X_2, data = df)
+D <- df$D
+
+neg_loglik <- function(beta, X, D) {
+  eta <- as.vector(X %*% beta)
+  p <- pnorm(eta)
+  -sum(D * log(p) + (1 - D) * log(1 - p))
+}
+
+fit <- optim(par = rep(0, ncol(X)), fn = neg_loglik, X = X, D = D)
+df$p_hat <- pnorm(as.vector(X %*% fit$par))
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}{IPW vs.\ stabilized IPW}
+\begin{wideitemize}
+\item IPW ATE estimator:\pause
+\end{wideitemize}
+\[
+\widehat{\E}_{IPW}[\tau_i]=
+\frac{1}{n}\sum_{i=1}^n\left(\frac{Y_i D_i}{\hat p_D(\X_i)}-\frac{Y_i(1-D_i)}{1-\hat p_D(\X_i)}\right).
+\]
+\begin{wideitemize}
+\item Stabilized IPW (Hájek / ratio estimator):\pause
+\end{wideitemize}
+\[
+\widehat{\E}_{SIPW}[\tau_i]=
+\frac{\frac{1}{n}\sum_{i=1}^n \frac{Y_i D_i}{\hat p_D(\X_i)}}
+{\frac{1}{n}\sum_{i=1}^n \frac{D_i}{\hat p_D(\X_i)}}
+\;-\;
+\frac{\frac{1}{n}\sum_{i=1}^n \frac{Y_i(1-D_i)}{1-\hat p_D(\X_i)}}
+{\frac{1}{n}\sum_{i=1}^n \frac{1-D_i}{1-\hat p_D(\X_i)}}.
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Why stabilize?}
+\begin{wideitemize}
+\item The denominators re-normalize when the sample has unusually many large or small weights.\pause
+\item With the true propensity score,
+\[
+\E\!\left[\frac{D_i}{p_D(\X_i)}\right]=1,
+\quad
+\E\!\left[\frac{1-D_i}{1-p_D(\X_i)}\right]=1,
+\]
+so stabilization targets the same estimand.\pause
+\item In practice, stabilized IPW reduces variance relative to raw IPW.\pause
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Code: stabilized IPW}
+\small
+<<sipw-code, echo=TRUE>>=
+# IPW and stabilized IPW using the science table data frame df
+w_t <- df$D / df$p_hat
+w_c <- (1 - df$D) / (1 - df$p_hat)
+
+ipw_ate <- mean(w_t * df$Y - w_c * df$Y)
+
+sipw_ate <- (sum(w_t * df$Y) / sum(w_t)) -
+  (sum(w_c * df$Y) / sum(w_c))
+
+c(ipw_ate = ipw_ate, sipw_ate = sipw_ate)
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Doubly robust theorem (Thm.\ 7.2.8)}
+\small
+\begin{wideitemize}
+\item Let $\tilde m_d(x)$ approximate $\E[Y_i\mid D_i=d,\X_i=x]$ and let $\tilde p_D(x)$ approximate $p_D(x)=\Pr[D_i=1\mid \X_i=x]$.\pause
+\item Under strong ignorability, if either:\pause
+\begin{itemize}
+  \item $\tilde m_d(x)$ is correct for $d\in\{0,1\}$ and $0<\tilde p_D(x)<1$, or
+  \item $\tilde p_D(x)=p_D(x)$ for all $x$,
+\end{itemize}
+then
+\end{wideitemize}
+\[
+\E[\tau_i]=\E\!\left[\tilde m_1(\X_i)-\tilde m_0(\X_i)
+\;+\;\frac{D_i\{Y_i-\tilde m_1(\X_i)\}}{\tilde p_D(\X_i)}
+-\frac{(1-D_i)\{Y_i-\tilde m_0(\X_i)\}}{1-\tilde p_D(\X_i)}\right].
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Why it works}
+\small
+\begin{wideitemize}
+\item If the outcome model is correct, then
+\[
+\E[Y_i-\tilde m_d(\X_i)\mid D_i=d,\X_i]=0,
+\]
+so the weighted residual terms vanish.\pause
+\item If the propensity model is correct, the IPW terms reweight the residuals so their expectation is zero even when $\tilde m_d(x)$ is misspecified.\pause
+\item Thus the expression for $\E[\tau_i]$ holds if \emph{either} model is correct.\pause
+\end{wideitemize}
+
+\[
+\E[\tau_i]=\E\!\left[\tilde m_1(\X_i)-\tilde m_0(\X_i)
+\;+\;\frac{D_i\{Y_i-\tilde m_1(\X_i)\}}{\tilde p_D(\X_i)}
+-\frac{(1-D_i)\{Y_i-\tilde m_0(\X_i)\}}{1-\tilde p_D(\X_i)}\right].
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Doubly robust estimator}
+\small
+\begin{wideitemize}
+\item Replace expectations with sample averages and plug in $\tilde m_d(\cdot)$ and $\tilde p_D(\cdot)$:\pause
+\end{wideitemize}
+\[
+\widehat{\E}_{DR}[\tau_i]=
+\begin{aligned}
+\frac{1}{n}\sum_{i=1}^n\Big[
+\tilde m_1(\X_i)-\tilde m_0(\X_i)
+\;+\;\frac{D_i\{Y_i-\tilde m_1(\X_i)\}}{\tilde p_D(\X_i)} \\
+-\frac{(1-D_i)\{Y_i-\tilde m_0(\X_i)\}}{1-\tilde p_D(\X_i)}
+\Big].
+\end{aligned}
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Code: doubly robust estimator (science table)}
+\small
+<<dr-code, echo=TRUE>>=
+# Outcome models
+fit_dr <- lm(Y ~ D + X_1 + X_2, data = df)
+df$m1_hat <- predict(fit_dr, newdata = transform(df, D = 1))
+df$m0_hat <- predict(fit_dr, newdata = transform(df, D = 0))
+
+# DR estimator (uses p_hat from propensity model)
+dr_ate <- mean(
+  df$m1_hat - df$m0_hat +
+    df$D * (df$Y - df$m1_hat) / df$p_hat -
+    (1 - df$D) * (df$Y - df$m0_hat) / (1 - df$p_hat)
+)
+dr_ate
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Overlap and positivity: definitions}
+\small
+\begin{wideitemize}
+\item \textbf{Positivity (overlap in treatment probabilities):}
+There exists $\varepsilon>0$ such that for all $x\in\Supp[\X_i]$,
+\[
+\varepsilon<p_D(x)<1-\varepsilon.
+\]
+\item Interpretation: every covariate profile has nonzero probability of both treatment and control.\pause
+\item \textbf{Complete population overlap:} the supports of $\X_i$ in treated and control groups overlap.\pause
+\item Failure of positivity $\Rightarrow$ incomplete overlap (regions of $x$ with only treated or only control).\pause
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Example: failure of overlap}
+\small
+<<overlap-failure-fig, echo=FALSE, fig=TRUE, width=6, height=3>>=
+n <- 1e4
+df_overlap <- data.frame(
+  x = c(rnorm(n, mean = -1.5, sd = 0.7),
+        rnorm(n, mean = 1.5, sd = 0.7)),
+  group = rep(c("Control", "Treated"), each = n)
+)
+
+ggplot(df_overlap, aes(x = x, color = group, fill = group)) +
+  geom_density(alpha = 0.3, linewidth = 0.8, adjust = 1.1) +
+  scale_fill_manual(values = c("#E69F00", "#56B4E9")) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9")) +
+  labs(x = "Covariate X", y = "Density", fill = "Treatment status",
+       color = "Treatment status") +
+  theme_minimal()
+@
+
+
+\vspace{0.3em}
+\noindent \footnotesize Little overlap in $X$ implies $p_D(x)$ near 0 or 1 for some $x$.
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Code: Lalonde propensity score overlap}
+\scriptsize
+<<lalonde-overlap-code, echo=TRUE, fig=FALSE>>=
+library(ggplot2)
+
+lalonde_url <- 
+  "https://raw.githubusercontent.com/xuyiqing/lalonde/master/data/lalonde.RData"
+load(url(lalonde_url))
+
+covar <- c("age", "education", "black", "hispanic", "married", "nodegree",
+           "re74", "re75", "u74", "u75")
+
+ps_fit <- glm(treat ~ age + education + black + hispanic + married + nodegree +
+                re74 + re75 + u74 + u75,
+              data = ldw, family = binomial())
+ldw$ps <- predict(ps_fit, type = "response")
+
+ldw$group <- factor(ifelse(ldw$treat == 1, "Treated", "Control"),
+                    levels = c("Control", "Treated"))
+
+ggplot(ldw, aes(x = ps, fill = group)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 position = "identity", alpha = 0.5, bins = 30) +
+  scale_fill_manual(values = c("#E69F00", "#56B4E9")) +
+  labs(x = "Propensity score", y = "Density", fill = "Group") +
+  theme_minimal()
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Figure: Lalonde propensity score overlap}
+\small
+\begin{wideitemize}
+\item Treated vs.\ control propensity score overlap in the LDW data.\hfill \footnotesize (Xu et al.\ tutorial; see References)
+\end{wideitemize}
+\vspace{0.2em}
+<<lalonde-overlap-fig, echo=FALSE, fig=TRUE, width=6, height=3>>=
+ggplot(ldw, aes(x = ps, fill = group)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 position = "identity", alpha = 0.5, bins = 30) +
+  scale_fill_manual(values = c("#E69F00", "#56B4E9")) +
+  labs(x = "Propensity score", y = "Density", fill = "Group") +
+  theme_minimal()
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Figure: CPS1 overlap (observational controls)}
+\small
+\begin{wideitemize}
+\item Treated LDW units + CPS controls.\hfill \footnotesize (Xu et al.\ tutorial; see References)
+\end{wideitemize}
+\vspace{0.2em}
+<<cps-overlap-fig, echo=FALSE, fig=TRUE, width=6, height=3>>=
+ps_fit_cps <- glm(treat ~ age + education + black + hispanic + married + nodegree +
+                    re74 + re75 + u74 + u75,
+                  data = ldw_cps, family = binomial())
+ldw_cps$ps <- predict(ps_fit_cps, type = "response")
+
+ldw_cps$group <- factor(ifelse(ldw_cps$treat == 1, "Treated", "Control"),
+                        levels = c("Control", "Treated"))
+
+ggplot(ldw_cps, aes(x = ps, fill = group)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 position = "identity", alpha = 0.5, bins = 30) +
+  scale_fill_manual(values = c("#E69F00", "#56B4E9")) +
+  labs(x = "Propensity score", y = "Density", fill = "Group") +
+  theme_minimal()
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Why overlap matters}
+\small
+\begin{wideitemize}
+\item If $p_D(x)=0$ or $1$ for some $x$, then $Y_i(1)$ or $Y_i(0)$ is not identified at that $x$.\pause
+\item If $p_D(x)$ is near 0 or 1, weights explode and estimates become unstable.\pause
+\item IPW: extreme weights $\Rightarrow$ high variance.\pause
+\item Matching: few/no close matches $\Rightarrow$ bias or large variance.\pause
+\item Regression: extrapolation where data are missing.\pause
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Diagnostics and responses}
+\small
+\begin{wideitemize}
+\item Diagnose overlap with propensity score plots (treated vs.\ control) and extreme $\hat p_D(x)$.\pause
+\item Report share of units outside common support (e.g., $\hat p_D(x)<0.05$ or $>0.95$).\pause
+\item \textbf{Trimming / common support:} restrict to overlap region.\pause
+\item Trimming changes the estimand (e.g., ATT or overlap population).\pause
+\item Stabilized IPW reduces variance but does not fix identification when overlap fails.\pause
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{ATT-specific IPW formulas}
+\scriptsize 
+\begin{wideitemize}
+\item Target estimand:
+\[
+\E[\tau_i \mid D_i = 1] = \E[Y_i(1)-Y_i(0)\mid D_i=1].
+\]
+\item IPW ATT estimator (controls reweighted by $p_D$):\pause
+\end{wideitemize}
+\[
+=
+\frac{1}{n_1}\sum_{i=1}^n Y_i D_i
+-\frac{1}{n_1}\sum_{i=1}^n Y_i(1-D_i)\frac{\hat p_D(\X_i)}{1-\hat p_D(\X_i)},
+\quad n_1=\sum_{i=1}^n D_i.
+\]
+\begin{wideitemize}
+\item Stabilized (Hájek) ATT:\pause
+\end{wideitemize}
+\[
+=
+\frac{\sum_{i=1}^n Y_i D_i}{\sum_{i=1}^n D_i}
+-\frac{\sum_{i=1}^n Y_i(1-D_i)\frac{\hat p_D(\X_i)}{1-\hat p_D(\X_i)}}
+{\sum_{i=1}^n (1-D_i)\frac{\hat p_D(\X_i)}{1-\hat p_D(\X_i)}}.
+\]
+\begin{wideitemize}
+\item Doubly robust ATT (with outcome model $\tilde m_d$ and propensity $\tilde p_D$):\pause
+\end{wideitemize}
+\[=
+\begin{aligned}
+&\frac{1}{n_1}\sum_{i=1}^n D_i\Big[\tilde m_1(\X_i)-\tilde m_0(\X_i)\Big] \\
+&\quad+\frac{1}{n_1}\sum_{i=1}^n D_i\{Y_i-\tilde m_1(\X_i)\}
+-\frac{1}{n_1}\sum_{i=1}^n (1-D_i)\frac{\tilde p_D(\X_i)}{1-\tilde p_D(\X_i)}\{Y_i-\tilde m_0(\X_i)\},
+\end{aligned}
+\quad n_1=\sum_{i=1}^n D_i.
+\]
+\end{frame}
+%-------------------------------------------------------------------------------%
+
+\begin{frame}{Placebo testing (idea)}
+\small
+\begin{wideitemize}
+\item Placebo tests probe the plausibility of ignorability by checking balance on \emph{outcomes that should not be affected by treatment}.\pause
+\item If treated and control units differ on placebo outcomes after adjustment, that is evidence against the identifying assumptions.\pause
+\item Placebo tests are \emph{not} the same as balance tests: balance checks whether the reweighting/matching worked, placebo tests probe the causal identification.\pause
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Placebo outcomes (implementation)}
+\small
+\begin{wideitemize}
+\item Choose an outcome measured \emph{before} treatment (or otherwise unaffected by treatment).\pause
+\item Re-estimate the propensity score without using that placebo outcome as a covariate.\pause
+\item Apply the same estimator(s) (IPW, stabilized IPW, DR, etc.) to the placebo outcome.\pause
+\item Large or significant placebo effects suggest lack of overlap or residual confounding.\pause
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\backupbegin
+%-------------------------------------------------------------------------------%
+\begin{frame}[allowframebreaks]{References}
+\bibliographystyle{apalike}
+\bibliography{../assets/PLSC30600}
+\vspace{0.5em}
+\noindent \footnotesize Tutorial: \url{https://yiqingxu.org/tutorials/lalonde/}
+\end{frame}
+%-------------------------------------------------------------------------------%
+\backupend
+\end{document}
