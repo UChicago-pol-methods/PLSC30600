@@ -10,7 +10,6 @@
 
 ```r
 # Core visualization
-library(tidyverse)  # includes ggplot2
 library(ggplot2)
 
 # Color palettes and themes
