@@ -55,7 +55,6 @@ The experimental control group is stored separately as
 `ldw_co`.
 
 ```{r}
-library(haven)   # read Stata .dta files
 library(Matching)
 library(estimatr)
 
