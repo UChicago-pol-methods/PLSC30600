@@ -64,7 +64,7 @@ $i$ & $X_{[1]i}$ & $X_{[2]i}$ & $p_D(\X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{V
 
 %-------------------------------------------------------------------------------%
 \begin{frame}[fragile]{Code: science table data}
-\small
+\scriptsize
 <<science-table, echo=TRUE>>=
 df <- data.frame(
   X_1 = c("A","A","B","B","A","A","B","B","A","B"),
@@ -85,7 +85,10 @@ neg_loglik <- function(beta, X, D) {
   -sum(D * log(p) + (1 - D) * log(1 - p))
 }
 
-fit <- optim(par = rep(0, ncol(X)), fn = neg_loglik, X = X, D = D)
+fit <- optim(par = rep(0, ncol(X)), 
+             fn = neg_loglik, 
+             X = X, 
+             D = D)
 df$p_hat <- pnorm(as.vector(X %*% fit$par))
 @
 \end{frame}
@@ -166,6 +169,11 @@ then
 
 %-------------------------------------------------------------------------------%
 \begin{frame}{Why it works}
+\[
+\E[\tau_i]=\E\!\left[\tilde m_1(\X_i)-\tilde m_0(\X_i)
+\;+\;\frac{D_i\{Y_i-\tilde m_1(\X_i)\}}{\tilde p_D(\X_i)}
+-\frac{(1-D_i)\{Y_i-\tilde m_0(\X_i)\}}{1-\tilde p_D(\X_i)}\right].
+\]
 \small
 \begin{wideitemize}
 \item If the outcome model is correct, then
@@ -174,36 +182,55 @@ then
 \]
 so the weighted residual terms vanish.\pause
 \item If the propensity model is correct, the IPW terms reweight the residuals so their expectation is zero even when $\tilde m_d(x)$ is misspecified.\pause
-\item Thus the expression for $\E[\tau_i]$ holds if \emph{either} model is correct.\pause
+\item Intuition: with correct $p_D(\X_i)$, weighting makes the residuals average over the \emph{target} $X$ distribution, so
+\[
+\E\!\left[\frac{D_i}{p_D(\X_i)}(Y_i-\tilde m_1(\X_i))\right]
+=\E\!\left[\E[Y_i(1)-\tilde m_1(\X_i)\mid \X_i]\right],
+\]
+and the analogous control term offsets bias.\pause
+\item Thus the expression for $\E[\tau_i]$ holds if \emph{either} model is correct.
 \end{wideitemize}
 
-\[
-\E[\tau_i]=\E\!\left[\tilde m_1(\X_i)-\tilde m_0(\X_i)
-\;+\;\frac{D_i\{Y_i-\tilde m_1(\X_i)\}}{\tilde p_D(\X_i)}
--\frac{(1-D_i)\{Y_i-\tilde m_0(\X_i)\}}{1-\tilde p_D(\X_i)}\right].
-\]
 \end{frame}
 
 %-------------------------------------------------------------------------------%
 \begin{frame}{Doubly robust estimator}
 \small
-\begin{wideitemize}
-\item Replace expectations with sample averages and plug in $\tilde m_d(\cdot)$ and $\tilde p_D(\cdot)$:\pause
-\end{wideitemize}
+\begin{overprint}
 \[
 \widehat{\E}_{DR}[\tau_i]=
 \begin{aligned}
-\frac{1}{n}\sum_{i=1}^n\Big[
-\tilde m_1(\X_i)-\tilde m_0(\X_i)
-\;+\;\frac{D_i\{Y_i-\tilde m_1(\X_i)\}}{\tilde p_D(\X_i)} \\
--\frac{(1-D_i)\{Y_i-\tilde m_0(\X_i)\}}{1-\tilde p_D(\X_i)}
-\Big].
+&\frac{1}{n}\sum_{i=1}^n
+\only<2>{\textcolor{Contrast1}}{\underbrace{\hat m_1(\X_i)-\hat m_0(\X_i)}_\text{outcome model}} +  \\
+&\quad\frac{1}{n}\sum_{i=1}^n
+\only<1-2>{\underbrace{
+\frac{D_i\left(Y_i-\only<2>{\textcolor{Contrast1}}{\hat m_1(\X_i)}\right)}{\only<3>{\textcolor{Contrast2}}{\hat p_D(\X_i)}}
+-\frac{(1-D_i)\left(Y_i-\only<2>{\textcolor{Contrast1}}{\hat m_0(\X_i)}\right)}{\only<3>{\textcolor{Contrast2}}{1-\hat p_D(\X_i)}}
+}_\text{residual correction}}
+\only<3>{\textcolor{Contrast2}{\underbrace{
+\frac{D_i\left(Y_i-\only<2>{\textcolor{Contrast1}}{\hat m_1(\X_i)}\right)}{\only<3>{\textcolor{Contrast2}}{\hat p_D(\X_i)}}
+-\frac{(1-D_i)\left(Y_i-\only<2>{\textcolor{Contrast1}}{\hat m_0(\X_i)}\right)}{\only<3>{\textcolor{Contrast2}}{1-\hat p_D(\X_i)}}
+}_\text{residual correction}}}
 \end{aligned}
 \]
+
+\begin{overlayarea}{\textwidth}{0.25\textheight}
+\only<2>{
+\begin{wideitemize}
+  \item The \textcolor{Contrast1}{outcome model} can be estimated by regression or ML.
+\end{wideitemize}
+}
+\only<3>{
+\begin{wideitemize}
+  \item The \textcolor{Contrast2}{propensity model} can be estimated by logit, probit, or ML.
+\end{wideitemize}
+}
+\end{overlayarea}
+\end{overprint}
 \end{frame}
 
 %-------------------------------------------------------------------------------%
-\begin{frame}[fragile]{Code: doubly robust estimator (science table)}
+\begin{frame}[fragile]{Code: doubly robust estimator}
 \small
 <<dr-code, echo=TRUE>>=
 # Outcome models
@@ -232,7 +259,7 @@ There exists $\varepsilon>0$ such that for all $x\in\Supp[\X_i]$,
 \]
 \item Interpretation: every covariate profile has nonzero probability of both treatment and control.\pause
 \item \textbf{Complete population overlap:} the supports of $\X_i$ in treated and control groups overlap.\pause
-\item Failure of positivity $\Rightarrow$ incomplete overlap (regions of $x$ with only treated or only control).\pause
+\item Failure of positivity $\Rightarrow$ incomplete overlap (regions of $x$ with only treated or only control).
 \end{wideitemize}
 \end{frame}
 
@@ -341,7 +368,7 @@ ggplot(ldw_cps, aes(x = ps, fill = group)) +
 \item If $p_D(x)$ is near 0 or 1, weights explode and estimates become unstable.\pause
 \item IPW: extreme weights $\Rightarrow$ high variance.\pause
 \item Matching: few/no close matches $\Rightarrow$ bias or large variance.\pause
-\item Regression: extrapolation where data are missing.\pause
+\item Regression: extrapolation where data are missing.
 \end{wideitemize}
 \end{frame}
 
@@ -353,8 +380,68 @@ ggplot(ldw_cps, aes(x = ps, fill = group)) +
 \item Report share of units outside common support (e.g., $\hat p_D(x)<0.05$ or $>0.95$).\pause
 \item \textbf{Trimming / common support:} restrict to overlap region.\pause
 \item Trimming changes the estimand (e.g., ATT or overlap population).\pause
-\item Stabilized IPW reduces variance but does not fix identification when overlap fails.\pause
+\item Stabilized IPW reduces variance but does not fix identification when overlap fails.
 \end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{ATT as a pseudo-population}
+\small
+\begin{wideitemize}
+\item For ATT, we reweight controls to match the treated covariate distribution.\pause
+\item Define weights:
+\[
+w_i^{ATT}=
+\begin{cases}
+1, & D_i=1 \\
+\dfrac{\hat p_D(\X_i)}{1-\hat p_D(\X_i)}, & D_i=0
+\end{cases}
+\]
+\item In the weighted pseudo-population, controls look like treated units in $X$.\pause
+\item Then ATT is a difference in weighted means:
+\[
+\widehat{\E}_{ATT}[\tau_i]=
+\bar Y_{D=1}-\frac{\sum_{i: D_i=0} w_i^{ATT} Y_i}{\sum_{i: D_i=0} w_i^{ATT}}.
+\]
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[shrink=14]{Science table: ATT weights}
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $\hat p_D(\X_i)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} & $w_i^{ATT}$ \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-7}
+1 & A & 0 & \textcolor{red!40}{$\hat p_D(\X_i)$} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} & \textcolor{red!40}{$\frac{\hat p_D(\X_i)}{1-\hat p_D(\X_i)}$} \\
+2 & A & 0 & \textcolor{red!40}{$\hat p_D(\X_i)$} & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} & 1 \\
+3 & B & 0 & \textcolor{red!40}{$\hat p_D(\X_i)$} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} & \textcolor{red!40}{$\frac{\hat p_D(\X_i)}{1-\hat p_D(\X_i)}$} \\
+4 & B & 0 & \textcolor{red!40}{$\hat p_D(\X_i)$} & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} & 1 \\
+5 & A & 1 & \textcolor{red!40}{$\hat p_D(\X_i)$} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} & \textcolor{red!40}{$\frac{\hat p_D(\X_i)}{1-\hat p_D(\X_i)}$} \\
+6 & A & 1 & \textcolor{red!40}{$\hat p_D(\X_i)$} & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} & 1 \\
+7 & B & 1 & \textcolor{red!40}{$\hat p_D(\X_i)$} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} & \textcolor{red!40}{$\frac{\hat p_D(\X_i)}{1-\hat p_D(\X_i)}$} \\
+8 & B & 1 & \textcolor{red!40}{$\hat p_D(\X_i)$} & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} & 1 \\
+9 & A & 0 & \textcolor{red!40}{$\hat p_D(\X_i)$} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} & \textcolor{red!40}{$\frac{\hat p_D(\X_i)}{1-\hat p_D(\X_i)}$} \\
+10 & B & 1 & \textcolor{red!40}{$\hat p_D(\X_i)$} & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} & 1 \\
+\end{tabular}
+\end{table}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Code: ATT weights}
+\small
+<<att-weights-code, echo=TRUE>>=
+# ATT weights: treated = 1, control = p_hat / (1 - p_hat)
+w_att <- ifelse(df$D == 1, 1, df$p_hat / (1 - df$p_hat))
+
+att_ipw <- mean(df$Y[df$D == 1]) -
+  weighted.mean(df$Y[df$D == 0], w_att[df$D == 0])
+
+c(att_ipw = att_ipw)
+@
 \end{frame}
 
 %-------------------------------------------------------------------------------%
@@ -364,17 +451,17 @@ ggplot(ldw_cps, aes(x = ps, fill = group)) +
 \item Target estimand:
 \[
 \E[\tau_i \mid D_i = 1] = \E[Y_i(1)-Y_i(0)\mid D_i=1].
-\]
-\item IPW ATT estimator (controls reweighted by $p_D$):\pause
+\]\pause
+\item IPW ATT estimator (controls reweighted by $p_D$):
 \end{wideitemize}
 \[
 =
 \frac{1}{n_1}\sum_{i=1}^n Y_i D_i
 -\frac{1}{n_1}\sum_{i=1}^n Y_i(1-D_i)\frac{\hat p_D(\X_i)}{1-\hat p_D(\X_i)},
 \quad n_1=\sum_{i=1}^n D_i.
-\]
+\]\pause
 \begin{wideitemize}
-\item Stabilized (Hájek) ATT:\pause
+\item Stabilized (Hájek) ATT:
 \end{wideitemize}
 \[
 =
@@ -382,26 +469,25 @@ ggplot(ldw_cps, aes(x = ps, fill = group)) +
 -\frac{\sum_{i=1}^n Y_i(1-D_i)\frac{\hat p_D(\X_i)}{1-\hat p_D(\X_i)}}
 {\sum_{i=1}^n (1-D_i)\frac{\hat p_D(\X_i)}{1-\hat p_D(\X_i)}}.
 \]
-\begin{wideitemize}
-\item Doubly robust ATT (with outcome model $\tilde m_d$ and propensity $\tilde p_D$):\pause
+\begin{wideitemize}\pause
+\item Doubly robust ATT (with outcome model $\hat m_d$ and propensity $\hat p_D$):
 \end{wideitemize}
 \[=
 \begin{aligned}
-&\frac{1}{n_1}\sum_{i=1}^n D_i\Big[\tilde m_1(\X_i)-\tilde m_0(\X_i)\Big] \\
-&\quad+\frac{1}{n_1}\sum_{i=1}^n D_i\{Y_i-\tilde m_1(\X_i)\}
--\frac{1}{n_1}\sum_{i=1}^n (1-D_i)\frac{\tilde p_D(\X_i)}{1-\tilde p_D(\X_i)}\{Y_i-\tilde m_0(\X_i)\},
+&\frac{1}{n_1}\sum_{i=1}^n D_i\Big[\hat m_1(\X_i)-\hat m_0(\X_i)\Big] \\
+&\quad+\frac{1}{n_1}\sum_{i=1}^n D_i\{Y_i-\hat m_1(\X_i)\}
+-\frac{1}{n_1}\sum_{i=1}^n (1-D_i)\frac{\hat p_D(\X_i)}{1-\hat p_D(\X_i)}\{Y_i-\hat m_0(\X_i)\}.
 \end{aligned}
-\quad n_1=\sum_{i=1}^n D_i.
 \]
 \end{frame}
 %-------------------------------------------------------------------------------%
 
-\begin{frame}{Placebo testing (idea)}
+\begin{frame}{Placebo testing}
 \small
 \begin{wideitemize}
 \item Placebo tests probe the plausibility of ignorability by checking balance on \emph{outcomes that should not be affected by treatment}.\pause
 \item If treated and control units differ on placebo outcomes after adjustment, that is evidence against the identifying assumptions.\pause
-\item Placebo tests are \emph{not} the same as balance tests: balance checks whether the reweighting/matching worked, placebo tests probe the causal identification.\pause
+\item Placebo tests are \emph{not} the same as balance tests: balance checks whether the reweighting/matching worked, placebo tests probe the causal identification.
 \end{wideitemize}
 \end{frame}
 
@@ -412,7 +498,7 @@ ggplot(ldw_cps, aes(x = ps, fill = group)) +
 \item Choose an outcome measured \emph{before} treatment (or otherwise unaffected by treatment).\pause
 \item Re-estimate the propensity score without using that placebo outcome as a covariate.\pause
 \item Apply the same estimator(s) (IPW, stabilized IPW, DR, etc.) to the placebo outcome.\pause
-\item Large or significant placebo effects suggest lack of overlap or residual confounding.\pause
+\item Large or significant placebo effects suggest lack of overlap or residual confounding.
 \end{wideitemize}
 \end{frame}
 
@@ -422,6 +508,7 @@ ggplot(ldw_cps, aes(x = ps, fill = group)) +
 \begin{frame}[allowframebreaks]{References}
 \bibliographystyle{apalike}
 \bibliography{../assets/PLSC30600}
+\nocite{lalonde_1986, imbens-xu_2025, dehejia-wahba_1999}
 \vspace{0.5em}
 \noindent \footnotesize Tutorial: \url{https://yiqingxu.org/tutorials/lalonde/}
 \end{frame}
