@@ -120,14 +120,13 @@ Write out at least one entry (e.g., the $(1,2)$ entry) step-by-step, such as
 \vspace{0.75em}
 
 \section*{Problem 1: Weighting estimators}
-
-\begin{enumerate}[label=\textbf{1.\alph*}]
-  \item \textbf{IPW formula.}
+\textbf{IPW formula.}
   Let $p_D(X_i)\in(0,1)$ be the propensity score for unit $i$. The IPW estimator for the ATE is:
   \[
   \hat\tau_{\text{IPW}}=\frac{1}{n}\sum_{i=1}^n \left(\frac{D_i Y_i}{p_D(X_i)}-\frac{(1-D_i)Y_i}{1-p_D(X_i)}\right).
   \]
 
+\begin{enumerate}[label=\textbf{1.\alph*}]
   \item \textbf{Numerical check.}
   Suppose $n=4$ with
   \[
