@@ -1,5 +1,5 @@
 % !Rnw weave = Sweave
-\documentclass[xcolor={dvipsnames}, handout]{beamer}
+\documentclass[xcolor={dvipsnames}]{beamer}
 
 \RequirePackage{../assets/pres-template_MOW}
 \usepackage{colortbl}
@@ -207,10 +207,10 @@ and the analogous control term offsets bias.\pause
 \frac{D_i\left(Y_i-\only<2>{\textcolor{Contrast1}}{\hat m_1(\X_i)}\right)}{\only<3>{\textcolor{Contrast2}}{\hat p_D(\X_i)}}
 -\frac{(1-D_i)\left(Y_i-\only<2>{\textcolor{Contrast1}}{\hat m_0(\X_i)}\right)}{\only<3>{\textcolor{Contrast2}}{1-\hat p_D(\X_i)}}
 }_\text{residual correction}}
-\only<3>{\textcolor{Contrast2}{\underbrace{
-\frac{D_i\left(Y_i-\only<2>{\textcolor{Contrast1}}{\hat m_1(\X_i)}\right)}{\only<3>{\textcolor{Contrast2}}{\hat p_D(\X_i)}}
--\frac{(1-D_i)\left(Y_i-\only<2>{\textcolor{Contrast1}}{\hat m_0(\X_i)}\right)}{\only<3>{\textcolor{Contrast2}}{1-\hat p_D(\X_i)}}
-}_\text{residual correction}}}
+\only<3>{\textcolor{Contrast2}{\underbrace{\color{black}\left[
+\frac{D_i\left(Y_i-\only<2>{\textcolor{Contrast1}}{\hat m_1(\X_i)}\right)}{\textcolor{Contrast2}{\hat p_D(\X_i)}}
+-\frac{(1-D_i)\left(Y_i-\only<2>{\textcolor{Contrast1}}{\hat m_0(\X_i)}\right)}{\textcolor{Contrast2}{1-\hat p_D(\X_i)}}
+\right]}_{\text{residual correction}}}}
 \end{aligned}
 \]
 
@@ -478,6 +478,148 @@ c(att_ipw = att_ipw)
 &\quad+\frac{1}{n_1}\sum_{i=1}^n D_i\{Y_i-\hat m_1(\X_i)\}
 -\frac{1}{n_1}\sum_{i=1}^n (1-D_i)\frac{\hat p_D(\X_i)}{1-\hat p_D(\X_i)}\{Y_i-\hat m_0(\X_i)\}.
 \end{aligned}
+\]
+\end{frame}
+%-------------------------------------------------------------------------------%
+
+\begin{frame}{DR estimator revisited}
+\scriptsize
+\begin{wideitemize}
+\item Using plug-in models $\hat m_d(\X_i)$ and $\hat p_D(\X_i)$:
+\end{wideitemize}
+\[
+\widehat{\E}_{DR}[\tau_i]=
+\frac{1}{n}\sum_{i=1}^n\Big[
+\hat m_1(\X_i)-\hat m_0(\X_i)
+\;+\;\frac{D_i}{\hat p_D(\X_i)}\{Y_i-\hat m_1(\X_i)\}
+-\frac{1-D_i}{1-\hat p_D(\X_i)}\{Y_i-\hat m_0(\X_i)\}
+\Big].
+\]
+\begin{wideitemize}\pause
+\item Same estimator, grouped as treated-side minus control-side:
+\end{wideitemize}
+\[
+\widehat{\E}_{DR}[\tau_i]=
+\frac{1}{n}\sum_{i=1}^n\Big[
+\hat m_1(\X_i)+\frac{D_i}{\hat p_D(\X_i)}\{Y_i-\hat m_1(\X_i)\}
+\Big]
+-\frac{1}{n}\sum_{i=1}^n\Big[
+\hat m_0(\X_i)+\frac{1-D_i}{1-\hat p_D(\X_i)}\{Y_i-\hat m_0(\X_i)\}
+\Big].
+\]
+\end{frame}
+%-------------------------------------------------------------------------------%
+
+\begin{frame}{DR scores: treated and control}
+\scriptsize
+\begin{wideitemize}
+\item Define treated- and control-side scores:
+\end{wideitemize}
+\[
+\hat\psi_i^{(1)}=
+\hat m_1(\X_i)+\frac{D_i}{\hat p_D(\X_i)}\{Y_i-\hat m_1(\X_i)\},
+\qquad
+\hat\psi_i^{(0)}=
+\hat m_0(\X_i)+\frac{1-D_i}{1-\hat p_D(\X_i)}\{Y_i-\hat m_0(\X_i)\}.
+\]
+\begin{wideitemize}\pause
+\item Then the DR estimator is the difference in average scores:
+\end{wideitemize}
+\[
+\widehat{\E}_{DR}[\tau_i]=
+\frac{1}{n}\sum_{i=1}^n \hat\psi_i^{(1)}
+-\frac{1}{n}\sum_{i=1}^n \hat\psi_i^{(0)}.
+\]
+\end{frame}
+%-------------------------------------------------------------------------------%
+
+\begin{frame}[shrink=14]{Science table: DR scores}
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{c|c|c|c|c|c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & \textcolor{red!40}{$\hat p_D(\X_i)$} & $Y_i(0)$ & $Y_i(1)$ &
+\textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} &
+\textcolor{red!40}{$\hat\psi_i^{(1)}$} & \textcolor{red!40}{$\hat\psi_i^{(0)}$} &
+\textcolor{red!40}{$\hat\psi_i^{(1)}-\hat\psi_i^{(0)}$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-11}
+1 & A & 0 & \textcolor{red!40}{0.33} & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} & \textcolor{red!40}{?} & \textcolor{red!40}{?} & \textcolor{red!40}{?} \\
+2 & A & 0 & \textcolor{red!40}{0.33} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} & \textcolor{red!40}{?} & \textcolor{red!40}{?} & \textcolor{red!40}{?} \\
+3 & B & 0 & \textcolor{red!40}{0.50} & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} & \textcolor{red!40}{?} & \textcolor{red!40}{?} & \textcolor{red!40}{?} \\
+4 & B & 0 & \textcolor{red!40}{0.50} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} & \textcolor{red!40}{?} & \textcolor{red!40}{?} & \textcolor{red!40}{?} \\
+5 & A & 1 & \textcolor{red!40}{0.50} & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} & \textcolor{red!40}{?} & \textcolor{red!40}{?} & \textcolor{red!40}{?} \\
+6 & A & 1 & \textcolor{red!40}{0.50} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} & \textcolor{red!40}{?} & \textcolor{red!40}{?} & \textcolor{red!40}{?} \\
+7 & B & 1 & \textcolor{red!40}{0.67} & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} & \textcolor{red!40}{?} & \textcolor{red!40}{?} & \textcolor{red!40}{?} \\
+8 & B & 1 & \textcolor{red!40}{0.67} & \textcolor{red!40}{?} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} & \textcolor{red!40}{?} & \textcolor{red!40}{?} & \textcolor{red!40}{?} \\
+9 & A & 0 & \textcolor{red!40}{0.33} & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} & \textcolor{red!40}{?} & \textcolor{red!40}{?} & \textcolor{red!40}{?} \\
+10 & B & 1 & \textcolor{red!40}{0.67} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} & \textcolor{red!40}{?} & \textcolor{red!40}{?} & \textcolor{red!40}{?} \\
+\end{tabular}
+\end{table}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+
+\begin{frame}[shrink=14]{Science table: DR scores}
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{c|c|c|c|c|c|c|c|c|c|c}
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & \textcolor{red!40}{$\hat p_D(\X_i)$} & $Y_i(0)$ & $Y_i(1)$ &
+\textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} &
+\textcolor{red!40}{$\hat\psi_i^{(1)}$} & \textcolor{red!40}{$\hat\psi_i^{(0)}$} &
+\textcolor{red!40}{$\hat\psi_i^{(1)}-\hat\psi_i^{(0)}$} \\
+\cmidrule(lr){1-1}\cmidrule(lr){2-11}
+1 & A & 0 & \textcolor{red!40}{0.33} & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} & \textcolor{red!40}{0.67} & \textcolor{red!40}{-0.16} & \textcolor{red!40}{0.83} \\
+2 & A & 0 & \textcolor{red!40}{0.33} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} & \textcolor{red!40}{1.66} & \textcolor{red!40}{0.31} & \textcolor{red!40}{1.35} \\
+3 & B & 0 & \textcolor{red!40}{0.50} & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} & \textcolor{red!40}{1.03} & \textcolor{red!40}{1.33} & \textcolor{red!40}{-0.30} \\
+4 & B & 0 & \textcolor{red!40}{0.50} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} & \textcolor{red!40}{0.97} & \textcolor{red!40}{0.67} & \textcolor{red!40}{0.30} \\
+5 & A & 1 & \textcolor{red!40}{0.50} & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} & \textcolor{red!40}{0.53} & \textcolor{red!40}{-0.17} & \textcolor{red!40}{0.70} \\
+6 & A & 1 & \textcolor{red!40}{0.50} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} & \textcolor{red!40}{1.47} & \textcolor{red!40}{0.17} & \textcolor{red!40}{1.30} \\
+7 & B & 1 & \textcolor{red!40}{0.67} & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{1} & \textcolor{red!40}{0.89} & \textcolor{red!40}{1.94} & \textcolor{red!40}{-1.05} \\
+8 & B & 1 & \textcolor{red!40}{0.67} & \textcolor{red!40}{?} & 0 & \textcolor{Violator1}{1} & \textcolor{Violator1}{0} & \textcolor{red!40}{-0.44} & \textcolor{red!40}{0.53} & \textcolor{red!40}{-0.97} \\
+9 & A & 0 & \textcolor{red!40}{0.33} & 1 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} & \textcolor{red!40}{0.67} & \textcolor{red!40}{-0.16} & \textcolor{red!40}{0.83} \\
+10 & B & 1 & \textcolor{red!40}{0.67} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} & \textcolor{red!40}{1.06} & \textcolor{red!40}{0.53} & \textcolor{red!40}{0.53} \\
+\end{tabular}
+\end{table}
+\vspace{-0.2em}
+\[
+\widehat{\E}_{DR}[\tau_i]=
+\frac{1}{n}\sum_{i=1}^n \Big(\hat\psi_i^{(1)}-\hat\psi_i^{(0)}\Big)
+\;=\;0.35. 
+\]
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{DR scores in matrix notation}
+\small
+\[
+\hat{\mathbf{m}}_1=\begin{bmatrix}\hat m_1(\X_1)\\ \vdots\\ \hat m_1(\X_n)\end{bmatrix},\quad
+\hat{\mathbf{m}}_0=\begin{bmatrix}\hat m_0(\X_1)\\ \vdots\\ \hat m_0(\X_n)\end{bmatrix},\quad
+\hat{\p}=\begin{bmatrix}\hat p_D(\X_1)\\ \vdots\\ \hat p_D(\X_n)\end{bmatrix}.
+\]
+\[
+\text{Let }\odot\text{ be elementwise multiplication and }\oslash\text{ elementwise division.}
+\]
+\[
+\hat{\bm{\psi}}^{(1)}=\hat{\mathbf{m}}_1+\big(\D\oslash \hat{\p}\big)\odot(\Y-\hat{\mathbf{m}}_1),\qquad
+\hat{\bm{\psi}}^{(0)}=\hat{\mathbf{m}}_0+\big((\one-\D)\oslash(\one-\hat{\p})\big)\odot(\Y-\hat{\mathbf{m}}_0).
+\]
+\[
+\widehat{\E}_{DR}[\tau_i]=\frac{1}{n}\,\one^\top\big(\hat{\bm{\psi}}^{(1)}-\hat{\bm{\psi}}^{(0)}\big).
+\]
+
+Compare to:
+
+\[
+\hat\psi_i^{(1)}=
+\hat m_1(\X_i)+\frac{D_i}{\hat p_D(\X_i)}\{Y_i-\hat m_1(\X_i)\},
+\quad
+\hat\psi_i^{(0)}=
+\hat m_0(\X_i)+\frac{1-D_i}{1-\hat p_D(\X_i)}\{Y_i-\hat m_0(\X_i)\}.
 \]
 \end{frame}
 %-------------------------------------------------------------------------------%
