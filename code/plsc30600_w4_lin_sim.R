@@ -2,46 +2,50 @@
 set.seed(60637)
 library(ggplot2)
 
-# DGP
+# DGP setup (shared covariates and treatment assignment)
 n <- 1e3
 mu_x1 <- 2
 X1 <- rnorm(n, mean = mu_x1)
 D <- rbinom(n, size = 1, prob = 0.5)
-
-# Potential outcomes with different covariate relationships
-# Control: y0 = a0 + b01*X1 + e
-# Treat:   y1 = a1 + b11*X1 + e
-# Overall: y = a0 + (a1 - a0)*D + b01*X1 + (b11 - b01)*D*X1 + e)
-
-a0 <- 0.2
-b01 <- 0.8
-
-a1 <- 0.6
-b11 <- 0.2
-
 u <- rnorm(n, sd = 1.0)
 
-y0 <- a0 + b01 * X1 + u
-y1 <- a1 + b11 * X1 + u
+# -------- DGP 1: constant TE, no X relationship
+# y0 = a0_1 + u, y1 = a0_1 + tau_1 + u
+a0_1 <- 0.2
+tau_1 <- 0.6
+y0_1 <- a0_1 + u
+y1_1 <- a0_1 + tau_1 + u
 
+# -------- DGP 2: constant TE, common X relationship
+# y0 = a0_2 + b_x*X1 + u, y1 = a0_2 + tau_2 + b_x*X1 + u
+a0_2 <- 0.2
+tau_2 <- 0.6
+b_x <- 0.5
+y0_2 <- a0_2 + b_x * X1 + u
+y1_2 <- a0_2 + tau_2 + b_x * X1 + u
+
+# -------- DGP 3: different X effects under treatment/control (Lin interactions)
+# y0 = a0_3 + b0*X1 + u, y1 = a1_3 + b1*X1 + u
+a0_3 <- 0.2
+b0 <- 0.8
+a1_3 <- 0.6
+b1 <- 0.2
+y0 <- a0_3 + b0 * X1 + u
+y1 <- a1_3 + b1 * X1 + u
 Y <- D * y1 + (1 - D) * y0
 
 
-# -------- Visualize simple linear models before interactions
+# -------- Visualize simple linear models before interactions (DGP 1 & 2)
 
 x1_grid <- seq(min(X1), max(X1), length.out = 200)
-tau_const <- 0.6
 
-# 1) Constant treatment effect, no relationship of X with Y
-mu0_const <- rep(a0, length(x1_grid))
-mu1_const <- rep(a0 + tau_const, length(x1_grid))
-# y = a0 + tau_const*D + e
+# DGP 1 curves
+mu0_const <- rep(a0_1, length(x1_grid))
+mu1_const <- rep(a0_1 + tau_1, length(x1_grid))
 
-# 2) Constant treatment effect, same X relationship under treatment/control
-common_slope <- 0.5
-mu0_common <- a0 + common_slope * x1_grid
-mu1_common <- a0 + tau_const + common_slope * x1_grid
-# y = a0 + tau_const*D + common_slope*X1 + e
+# DGP 2 curves
+mu0_common <- a0_2 + b_x * x1_grid
+mu1_common <- a0_2 + tau_2 + b_x * x1_grid
 
 viz_df <- data.frame(
   x1 = c(x1_grid, x1_grid, x1_grid, x1_grid),
@@ -105,14 +109,14 @@ cat("Abs difference:", round(abs(lin_tau_hat - sep_tau_hat), 6), "\n")
 
 x1_grid <- seq(min(X1), max(X1), length.out = 200)
 
-mu0_grid <- a0 + b01 * x1_grid
-mu1_grid <- a1 + b11 * x1_grid
+mu0_grid <- a0_3 + b0 * x1_grid
+mu1_grid <- a1_3 + b1 * x1_grid
 te_grid <- mu1_grid - mu0_grid
 
 # Reference quantities
 x1_bar <- mean(X1)
-te_at_mean_x1 <- (a1 - a0) + (b11 - b01) * x1_bar
-te_avg <- mean((a1 - a0) + (b11 - b01) * X1)
+te_at_mean_x1 <- (a1_3 - a0_3) + (b1 - b0) * x1_bar
+te_avg <- mean((a1_3 - a0_3) + (b1 - b0) * X1)
 
 cat("TE at mean X1 (on curve):", round(te_at_mean_x1, 4), "\n")
 cat("Average TE over sample:", round(te_avg, 4), "\n")
@@ -304,15 +308,15 @@ B <- 2000
 ipw_true_ates <- ipw_true_ses <- dr_hat_ates <- dr_hat_ses <- numeric(B)
 
 # Population ATE for this DGP (since E[u1 - u0] = 0 and X1 ~ N(mu_x1, 1))
-true_ate <- (a1 - a0) + (b11 - b01) * mu_x1
+true_ate <- (a1_3 - a0_3) + (b1 - b0) * mu_x1
 
 for (b in 1:B) {
   # Resimulate a full dataset draw
   X1_b <- rnorm(n, mean = mu_x1)
   u0_b <- rnorm(n, sd = 1.0)
   u1_b <- rnorm(n, sd = 1.0)
-  y0_b <- a0 + b01 * X1_b + u0_b
-  y1_b <- a1 + b11 * X1_b + u1_b
+  y0_b <- a0_3 + b0 * X1_b + u0_b
+  y1_b <- a1_3 + b1 * X1_b + u1_b
   D_b <- rbinom(n, size = 1, prob = plogis(-0.5 + 0.3 * X1_b))
   Y_b <- D_b * y1_b + (1 - D_b) * y0_b
 
