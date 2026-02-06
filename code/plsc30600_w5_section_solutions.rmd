@@ -1,5 +1,5 @@
 ---
-title: 'Week 5: Overlap Diagnosis'
+title: 'Week 5: Overlap Diagnosis - Suggested Solutions'
 author: "Maggie X. Wang"
 date: "2026-02-06"
 output: html_document
@@ -33,7 +33,17 @@ turn <- read_dta("keele-et-al-2017.dta")
 ## 1.1 Let's start with the original data - visualize the overlap
 
 ```{r}
+p_x_overlap_orig <- ggplot(turn, aes(x = blackpop_pct1990, fill = factor(black))) +
+  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
+  theme_minimal() +
+  labs(
+    fill = "Black candidate (D)",
+    x = "Black population share (1990)",
+    y = "Count",
+    title = "Overlap in X-space (Original data)"
+  )
 
+print(p_x_overlap_orig)
 ```
 
 ## What if the overlap problem is more egregious?
@@ -55,23 +65,72 @@ turn_bad <- turn %>%
 ## 1.2 Visualize again and compare
 
 ```{r}
+p_x_overlap_both <- bind_rows(
+  turn %>% mutate(dataset = "Original"),
+  turn_bad %>% mutate(dataset = "Manipulated (worse overlap)")
+) %>%
+  ggplot(aes(x = blackpop_pct1990, fill = factor(black))) +
+  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
+  facet_wrap(~ dataset, ncol = 1) +
+  theme_minimal() +
+  labs(
+    fill = "Black candidate (D)",
+    x = "Black population share (1990)",
+    y = "Count",
+    title = "Overlap in X-space (Original vs Manipulated)"
+  )
 
+print(p_x_overlap_both)
 ```
-
 
 # 2. Exercise: Overlap and IPW
 
 ## 2.1 Calculate the propensity scores for each dataset and compare their distrubutions
 
 ```{r}
+ps_orig <- glm(black ~ blackpop_pct1990, data = turn, family = binomial())
+ps_bad  <- glm(black ~ blackpop_pct1990, data = turn_bad, family = binomial())
 
+turn <- turn %>%
+  mutate(ps_hat = predict(ps_orig, type = "response"),
+         w_ate  = if_else(black == 1, 1/ps_hat, 1/(1-ps_hat)))
+
+turn_bad <- turn_bad %>%
+  mutate(ps_hat = predict(ps_bad, type = "response"),
+         w_ate  = if_else(black == 1, 1/ps_hat, 1/(1-ps_hat)))
 ```
 
+```{r}
+bind_rows(
+  turn %>% mutate(dataset = "Original"),
+  turn_bad %>% mutate(dataset = "Manipulated")
+) %>%
+  ggplot(aes(x = ps_hat, fill = factor(black))) +
+  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
+  facet_wrap(~ dataset, ncol = 1) +
+  theme_minimal() +
+  labs(fill = "D",
+       x = "Estimated propensity score",
+       y = "Count",
+       title = "Propensity score distributions (Original vs Manipulated)")
+```
 
 ## 2.2 Obtain IPW weights and compare their distributions
 
 ```{r}
+# I obtained weights already in the previous part, so just plotting
 
+bind_rows(
+  turn %>% mutate(dataset = "Original"),
+  turn_bad %>% mutate(dataset = "Manipulated")
+) %>%
+  ggplot(aes(x = w_ate, fill = dataset)) +
+  geom_histogram(position = "identity", alpha = 0.4, bins = 60) +
+  scale_x_log10() + # log scale for visibility
+  theme_minimal() +
+  labs(x = "ATE IPW weights (log scale)",
+       y = "Count",
+       title = "IPW weight distributions (Original vs Manipulated)")
 ```
 
 ## 2.3 Report common support
@@ -79,15 +138,71 @@ turn_bad <- turn %>%
 Recall from lecture slides, a common diagnostic tool for overlap is reporting the share of units outside common support (e.g., pscore < 0.05 or > 0.95).
 
 ```{r}
+low_cs <- 0.05
+high_cs <- 0.95
 
+bind_rows(
+  turn %>%
+    mutate(dataset = "Original",
+           outside = ps_hat < low_cs | ps_hat > high_cs),
+  turn_bad %>%
+    mutate(dataset = "Near-deterministic",
+           outside = ps_hat < low_cs | ps_hat > high_cs)
+) %>%
+  group_by(dataset) %>%
+  summarise(
+    n = n(),
+    n_outside = sum(outside),
+    share_outside = mean(outside),
+    .groups = "drop"
+  )
 ```
 
 ## 2.4 Using bootstrap, compare the variance of the IPW ATEs using the two datasets
 
 ```{r}
+set.seed(30600)
+B <- 300
 
+ipw_est_one <- function(dat) {
+  with(dat, {
+    weighted.mean(black_turnout[black == 1], w_ate[black == 1]) -
+      weighted.mean(black_turnout[black == 0], w_ate[black == 0])
+  })
+}
+
+boot_ipw_orig <- replicate(B, {
+  idx <- sample.int(nrow(turn), nrow(turn), replace = TRUE)
+  ipw_est_one(turn[idx, ])
+})
+
+boot_ipw_bad <- replicate(B, {
+  idx <- sample.int(nrow(turn_bad), nrow(turn_bad), replace = TRUE)
+  ipw_est_one(turn_bad[idx, ])
+})
+
+tibble(
+  dataset = c("Original", "Manipulated"),
+  boot_mean = c(mean(boot_ipw_orig), mean(boot_ipw_bad)),
+  boot_sd   = c(sd(boot_ipw_orig), sd(boot_ipw_bad))
+)
 ```
 
+```{r}
+# Optional visualization
+bind_rows(
+  tibble(est = boot_ipw_orig, dataset = "Original"),
+  tibble(est = boot_ipw_bad, dataset = "Near-deterministic")
+) %>%
+  ggplot(aes(x = est, fill = dataset)) +
+  geom_density(alpha = 0.35) +
+  theme_minimal() +
+  labs(
+    x = "Bootstrap IPW ATE",
+    y = "Density",
+    title = "Bootstrap IPW ATE distributions (fixed propensity scores)"
+  )
+```
 # 3. Overlap and Matching
 
 ## Nearest-neighbor matching
