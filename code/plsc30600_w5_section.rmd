@@ -1,0 +1,195 @@
+---
+title: 'Week 5: Overlap Diagnosis'
+author: "Maggie X. Wang"
+date: "2026-02-06"
+output: html_document
+---
+
+Do minority candidates drive minority voter turnout? Keele et al. (2017) examined mayoral elections in Louisiana from 1988 to 2011 and compare differences in Black turnout among elections with a Black candidate and elections with all-white candidates.
+
+Identification challenge: Black candidates are not randomly assigned to elections. Black candidates run in districts with larger Black population shares.
+
+*Citation: Keele, Luke J., Paru R. Shah, Ismail White, and Kristine Kay. "Black candidates and black turnout: A study of viability in louisiana mayoral elections." The Journal of Politics 79, no. 3 (2017): 780-791.*
+
+Download data here: https://github.com/UChicago-pol-methods/PLSC30600/blob/main/data/keele-et-al-2017.dta
+
+Relevant variables:
++ `black`: Whether the candidate is Black (treatment)
++ `blackpop_pct1990`: Percent of voters who are Black (covariate)
+
+```{r}
+library(tidyverse)
+library(haven)
+library(estimatr)
+```
+
+```{r}
+# Load data
+turn <- read_dta("keele-et-al-2017.dta")
+```
+
+# 1. Warmup: Diagnose overlap in X-space  
+
+## 1.1 Let's start with the original data - visualize the overlap
+
+```{r}
+
+```
+
+## What if the overlap problem is more egregious?
+
+Here, I am manipulating the support for the covariate to make the treatment more deterministic on the covariate, hence reducing overlap.
+
+```{r}
+x_cut <- 0.35
+eps   <- 0.03
+
+turn_bad <- turn %>%
+  mutate(
+    black_det = if_else(blackpop_pct1990 > x_cut, 1L, 0L),
+    flip = rbinom(n(), 1, eps),
+    black = if_else(flip == 1L, 1L - black_det, black_det)
+  )
+```
+
+## 1.2 Visualize again and compare
+
+```{r}
+
+```
+
+
+# 2. Exercise: Overlap and IPW
+
+## 2.1 Calculate the propensity scores for each dataset and compare their distrubutions
+
+```{r}
+
+```
+
+
+## 2.2 Obtain IPW weights and compare their distributions
+
+```{r}
+
+```
+
+## 2.3 Report common support
+
+Recall from lecture slides, a common diagnostic tool for overlap is reporting the share of units outside common support (e.g., pscore < 0.05 or > 0.95).
+
+```{r}
+
+```
+
+## 2.4 Using bootstrap, compare the variance of the IPW ATEs using the two datasets
+
+```{r}
+
+```
+
+# 3. Overlap and Matching
+
+## Nearest-neighbor matching
+
+Hot deck imputation is one way to use propensity score for matching. Nearest-neighbor is another, among many distance-based matching methods. Because the purpose of this exercise is visualization and illustration, I am using nearest-neighbor matching with propensity score distance.
+
+The idea: For each unit, find the most similar unit in the opposite treatment group.
+
+```{r}
+nn_dist <- function(dat) {
+  D <- dat$black
+  ps <- dat$ps_hat
+  out <- numeric(length(ps))
+  for (i in seq_along(ps)) {
+    opp_ps <- ps[D != D[i]]
+    out[i] <- if (length(opp_ps) == 0) NA_real_ else min(abs(ps[i] - opp_ps))
+  }
+  out
+}
+
+turn$nn_psdist <- nn_dist(turn)
+turn_bad$nn_psdist <- nn_dist(turn_bad)
+```
+
+## Visualize the match: propensity score distance
+
+A smaller distance therefore means that the unit has more similar covariates to its nearest neighbor in the opposite treatment group.
+
+```{r}
+bind_rows(
+  turn %>% mutate(dataset = "Original"),
+  turn_bad %>% mutate(dataset = "Manipulated")
+) %>%
+  ggplot(aes(x = nn_psdist, fill = dataset)) +
+  geom_density(alpha = 0.4) +
+  theme_minimal() +
+  labs(x = "Nearest opposite-treatment PS distance",
+       y = "Density",
+       title = "Nearest-neighbor PS distance: match quality diagnostic")
+```
+
+## Evaluate the match: chance of a close match
+
+For each unit, count how many opposite-treatment units are within a certain PS distance. Having more opposite-treatment units is good for matching.
+
+```{r}
+caliper <- 0.05
+
+count_close <- function(dat, caliper = 0.05) {
+  D <- dat$black
+  ps <- dat$ps_hat
+  sapply(seq_along(ps), function(i) sum(abs(ps[D != D[i]] - ps[i]) <= caliper))
+}
+
+turn$n_close <- count_close(turn, caliper)
+turn_bad$n_close <- count_close(turn_bad, caliper)
+
+bind_rows(
+  turn %>% mutate(dataset = "Original"),
+  turn_bad %>% mutate(dataset = "Manipulated")
+) %>%
+  group_by(dataset) %>%
+  summarise(
+    share_no_close = mean(n_close == 0),
+    share_few_close = mean(n_close <= 2),
+    median_close = median(n_close),
+    .groups = "drop"
+  )
+```
+
+```{r}
+# Visualize
+bind_rows(
+  turn %>% mutate(dataset = "Original"),
+  turn_bad %>% mutate(dataset = "Manipulated")
+) %>%
+  ggplot(aes(x = n_close, fill = dataset)) +
+  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
+  theme_minimal() +
+  labs(x = sprintf("Number of opposite-treatment units within PS caliper = %.2f", caliper),
+       y = "Count",
+       title = "How many close matches exist? (caliper-based diagnostic)")
+```
+
+# 4. NN distance vs IPW weights
+
+```{r}
+plot_df <- bind_rows(
+  turn %>% mutate(dataset = "Original"),
+  turn_bad %>% mutate(dataset = "Near-deterministic")
+) %>%
+  mutate(no_close = (n_close == 0))
+
+ggplot(plot_df, aes(x = nn_psdist, y = w_ate, shape = no_close, color = dataset)) +
+  geom_point(alpha = 0.5) +
+  scale_y_log10() +
+  theme_minimal() +
+  labs(
+    x = "Nearest opposite-treatment PS distance",
+    y = "IPW weight (log scale)",
+    shape = "No close match",
+    title = "Units with no close matches drive extreme IPW weights"
+  )
+```
+
