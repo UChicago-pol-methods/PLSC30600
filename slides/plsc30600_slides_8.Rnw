@@ -730,7 +730,7 @@ Assess robustness by checking whether the ``local comparison'' story is supporte
 FRD adds one key complication: treatment receipt \(D_i\) is not perfectly determined by eligibility \(Z_i=\one\{X_i\ge c\}\).\pause
 
 \begin{wideitemize}
-\item \textbf{Graphs:} make the binned outcome plot \emph{and} graph \(\Pr(D_i=1\mid X_i=x)\) (first stage) near \(c\).\pause
+\item \textbf{Graphs:} make the binned outcome plot \emph{and} graph \(\Pr[D_i=1\mid X_i=x]\) (first stage) near \(c\).\pause
 \item \textbf{Estimation:} estimate \(\tau_{FRD}\) using TSLS (numerically equivalent to the local Wald ratio \(\Delta_Y/\Delta_D\)).\pause
 \item \textbf{Inference:} use robust TSLS standard errors (or bootstrap); a plug-in approach is another option.\pause
 \item \textbf{Bandwidth:} choose an ``optimal'' bandwidth as a starting point (IK 2012 / modified CV ideas), and still report sensitivity.\pause
@@ -963,7 +963,7 @@ The key design assumption is about \emph{counterfactual} trends under no treatme
 \]\pause
 
 \vspace{0.25em}
-\textbf{Positivity/overlap (2x2):} \(\Pr(G_i=1)\in(0,1)\), and we observe both groups in both periods so each cell mean \(\E[Y\mid G=g,t=t]\) is well-defined.\pause
+\textbf{Positivity/overlap (2x2):} \(\Pr[G_i=1]\in(0,1)\), and we observe both groups in both periods so each cell mean \(\E[Y\mid G=g,t=t]\) is well-defined.\pause
 \end{frame}
 
 %-------------------------------------------------------------------------------%

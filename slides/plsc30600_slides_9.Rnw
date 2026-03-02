@@ -1,0 +1,712 @@
+% !Rnw weave = Sweave
+\documentclass[xcolor={dvipsnames}, handout]{beamer}
+
+\RequirePackage{../assets/pres-template_MOW}
+\usepackage{verbatim}
+
+\setkeys{Gin}{keepaspectratio}
+
+%--------------------------------------------------------------------------
+% Specific to this document -----------------------------------------------
+%--------------------------------------------------------------------------
+% \setbeamercovered{transparent}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setlength{\tabcolsep}{1.3pt}
+\title{PLSC 30600}
+\subtitle{Week 9: External validity (generalizability + transportability)}
+\date{Winter 2026}
+\author{Molly Offer-Westort}
+\institute{Department of Political Science, \\University of Chicago}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+<<setup, echo=FALSE, results=hide>>=
+set.seed(30600)
+
+suppressPackageStartupMessages({
+  library(ggplot2)
+  library(lmtest)
+  library(sandwich)
+})
+
+# Figure style guide (assets/R_figure_style_guide.md)
+cbPalette <- c(
+  "#999999", "#E69F00", "#56B4E9", "#009E73",
+  "#F0E442", "#0072B2", "#D55E00", "#CC79A7"
+)
+
+custom_theme <- theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 11, face = "bold"),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.25),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 14, r = 14, b = 14, l = 14),
+    axis.ticks.length = unit(5, "pt"),
+    axis.ticks = element_line(linewidth = 0.5),
+    legend.position = "bottom",
+    legend.background = element_rect(fill = "white", color = NA)
+  )
+
+ev_palette <- c("Study (S=1)" = cbPalette[3], "Target (S=0)" = cbPalette[2])
+
+# Robust path handling: this file may be compiled from the repo root or from /slides.
+lalonde_paths <- c("data/lalonde.RData", "../data/lalonde.RData")
+lalonde_path <- lalonde_paths[file.exists(lalonde_paths)][1]
+if (is.na(lalonde_path)) stop("Could not find lalonde.RData in data/ or ../data/.")
+load(lalonde_path)  # loads nsw, cps1, etc.
+
+# External-validity demo: NSW trial (study sample) -> CPS covariate distribution (target sample).
+Xvars <- c("age", "education", "black", "hispanic", "married", "nodegree", "re75", "u75")
+
+study <- nsw
+target <- cps1
+
+study$S <- 1
+target$S <- 0
+
+comb_full <- rbind(
+  study[, c("S", Xvars)],
+  target[, c("S", Xvars)]
+)
+
+sel_fit_full <- glm(
+  S ~ age + education + black + hispanic + married + nodegree + re75 + u75,
+  data = comb_full,
+  family = binomial()
+)
+
+study$ps_sel <- predict(sel_fit_full, newdata = study, type = "response")
+target$ps_sel <- predict(sel_fit_full, newdata = target, type = "response")
+
+w_full_raw <- (1 - study$ps_sel) / study$ps_sel
+w_full <- w_full_raw / mean(w_full_raw)
+
+df_ps <- rbind(
+  data.frame(ps = study$ps_sel, sample = "Study (S=1)"),
+  data.frame(ps = target$ps_sel, sample = "Target (S=0)")
+)
+
+tau_sate <- with(study, mean(re78[treat == 1]) - mean(re78[treat == 0]))
+tau_tate_full <- with(
+  study,
+  weighted.mean(re78[treat == 1], w_full[treat == 1]) -
+    weighted.mean(re78[treat == 0], w_full[treat == 0])
+)
+ess_full <- (sum(w_full)^2) / sum(w_full^2)
+
+# A simple "common-support" illustration: redefine the target to the subset that looks plausibly trial-eligible.
+th_overlap <- 0.10
+target_overlap <- target[target$ps_sel >= th_overlap, , drop = FALSE]
+
+comb_overlap <- rbind(
+  study[, c("S", Xvars)],
+  target_overlap[, c("S", Xvars)]
+)
+sel_fit_overlap <- glm(
+  S ~ age + education + black + hispanic + married + nodegree + re75 + u75,
+  data = comb_overlap,
+  family = binomial()
+)
+ps_study_overlap <- predict(sel_fit_overlap, newdata = study, type = "response")
+w_overlap_raw <- (1 - ps_study_overlap) / ps_study_overlap
+w_overlap <- w_overlap_raw / mean(w_overlap_raw)
+
+tau_tate_overlap <- with(
+  study,
+  weighted.mean(re78[treat == 1], w_overlap[treat == 1]) -
+    weighted.mean(re78[treat == 0], w_overlap[treat == 0])
+)
+ess_overlap <- (sum(w_overlap)^2) / sum(w_overlap^2)
+
+share_overlap <- nrow(target_overlap) / nrow(target)
+
+# Balance diagnostics (standardized mean differences vs target; using target SDs)
+smd <- function(x_study, x_target, w = NULL) {
+  m_study <- if (is.null(w)) mean(x_study) else weighted.mean(x_study, w)
+  (m_study - mean(x_target)) / sd(x_target)
+}
+
+balance_df <- data.frame(
+  var = Xvars,
+  smd_unw_full = NA_real_,
+  smd_w_full = NA_real_,
+  smd_unw_overlap = NA_real_,
+  smd_w_overlap = NA_real_
+)
+for (j in seq_along(Xvars)) {
+  v <- Xvars[j]
+  balance_df$smd_unw_full[j] <- smd(study[[v]], target[[v]])
+  balance_df$smd_w_full[j] <- smd(study[[v]], target[[v]], w_full)
+  balance_df$smd_unw_overlap[j] <- smd(study[[v]], target_overlap[[v]])
+  balance_df$smd_w_overlap[j] <- smd(study[[v]], target_overlap[[v]], w_overlap)
+}
+@
+
+%-------------------------------------------------------------------------------%
+\frame{\titlepage \thispagestyle{empty}}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Roadmap}
+\small
+\begin{wideitemize}
+\item What is external validity? Study sample vs.\ target population.\pause
+\item When do the study ATE and target ATE differ?\pause
+\item Identification + methods: standardization and (inverse-odds) weighting.\hfill \citeptitle{cole-stuart_2010}\pause
+\item Diagnostics: overlap, extreme weights, effective sample size.\pause
+\item Why this is hard even with RCTs: mechanisms, support factors, and ``licenses to transport.''\hfill \citeptitle{deaton-cartwright_2018}
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Internal vs.\ external validity}
+\small
+\begin{wideitemize}
+\item \textbf{Internal validity:} does \(D\) cause \(Y\) \emph{in this study}?\pause
+\item \textbf{External validity:} what can we say about effects \emph{elsewhere}?\pause
+\item Two reasons estimates change across settings:\pause
+  \begin{itemize}
+  \item \textbf{Effect heterogeneity:} \(\tau(x)\) differs across people/contexts.\pause
+  \item \textbf{Selection:} the study sample is not a random draw from the target.\pause
+  \item (\textbf{SUTVA/Design differences:} the treatment or its implementation differs across settings.)
+  \end{itemize}
+\end{wideitemize}
+
+\vspace{0.3em}
+\pause
+\footnotesize
+Deaton \& Cartwright emphasize: an RCT answers a well-defined question for the trial sample; using it for policy/general claims is a \emph{separate} inferential step. \citep{deaton-cartwright_2018}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{A clean setup: study sample vs.\ target population}
+\small
+Let \(S_i\in\{0,1\}\) indicate where unit \(i\) comes from:\pause
+\begin{wideitemize}
+\item \(S_i=1\): in the study (trial) sample.\pause
+\item \(S_i=0\): in the target population sample.\pause
+\end{wideitemize}
+
+\vspace{0.4em}
+\pause
+Define two estimands:\pause
+\[
+\tau_S \equiv \E[Y(1)-Y(0)\mid S=1]
+\qquad\text{and}\qquad
+\tau_T \equiv \E[Y(1)-Y(0)\mid S=0].
+\]
+
+\vspace{0.2em}
+\pause
+\footnotesize
+If effects are constant, \(\tau_S=\tau_T\). If effects vary and selection shifts the \(X\)-mix, they can differ a lot.
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Why \(\tau_S\neq\tau_T\): heterogeneous effects + different composition}
+\small
+Let \(X\) be an effect moderator. Then\pause
+\[
+\tau_S = \sum_x \tau(x)\Pr[X=x\mid S=1],
+\qquad
+\tau_T = \sum_x \tau(x)\Pr[X=x\mid S=0].
+\]
+\pause
+Even with perfect internal validity in \(S=1\), a different \(X\)-distribution changes the average effect.
+
+\vspace{0.6em}
+\pause
+\small
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+Stratum & \(\tau(x)\) & \(\Pr[X=x\mid S=1]\) & \(\Pr[X=x\mid S=0]\) \\
+\midrule
+\(X=0\) & 0 & 0.8 & 0.2 \\
+\(X=1\) & 5 & 0.2 & 0.8 \\
+\midrule
+\(\tau\) &  & \(1.0\) & \(4.0\) \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Three distinct external validity questions}
+\small
+\begin{wideitemize}
+\item \textbf{Generalizability:} from a study sample to the population it was meant to represent.\pause
+\item \textbf{Transportability:} from one population/context to a different one.\pause
+\item \textbf{Extrapolation:} beyond the observed support (new \(X\), new treatment version, new setting).\pause
+\end{wideitemize}
+
+\vspace{0.4em}
+\pause
+\textbf{Key idea:} ``external validity'' is not a binary property of a design; it depends on the \emph{target} and the \emph{assumptions} you are willing to defend. \citep{deaton-cartwright_2018}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Identification assumptions for \(\tau_T\) (potential outcomes)}
+\small
+Two pieces:\pause
+\begin{wideitemize}
+\item \textbf{Internal validity within the study} (e.g., random assignment):\pause
+\[
+D \indep (Y(1),Y(0)) \mid S=1.
+\]\pause
+\item \textbf{External validity / sampling ignorability:}\pause
+\[
+(Y(1),Y(0)) \indep S \mid X,
+\]
+plus \textbf{overlap} \(0<\Pr[S=1\mid X=x]<1\) where you want to generalize.\pause
+\end{wideitemize}
+
+\vspace{0.2em}
+\pause
+\footnotesize
+Overlap is checkable; the key ignorability claim is not. The substantive burden is: have we measured the right moderators \(X\)? \citep{cole-stuart_2010} \citep{tipton_2013}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{What's testable vs.\ what's not}
+\small
+\begin{wideitemize}
+\item \textbf{Testable / diagnosable:}\pause
+  \begin{itemize}
+  \item Differences in \(X\) across \(S=1\) vs.\ \(S=0\) (and overlap).\pause
+  \item Extremity of weights; effective sample size; balance after weighting.\pause
+  \end{itemize}
+\item \textbf{Not testable from the study alone:}\pause
+  \begin{itemize}
+  \item Whether you captured all effect moderators in \(X\).\pause
+  \item Whether the ``same treatment'' has the same meaning/version in the target.\pause
+  \item Whether support factors/mechanisms differ across settings.\pause
+  \end{itemize}
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Cole \& Stuart: sampling propensity scores and inverse-odds weights}
+\small
+If we observe \(X\) in both samples, we can model trial participation:\pause
+\[
+e_S(x)\equiv \Pr[S=1\mid X=x].
+\]
+\pause
+Then reweight the \emph{study} sample to match the \emph{target} \(X\)-distribution using inverse-odds weights:\pause
+\[
+w_i \propto \frac{\Pr[S=0\mid X_i]}{\Pr[S=1\mid X_i]}
+=\frac{1-e_S(X_i)}{e_S(X_i)}.
+\]
+
+\vspace{0.3em}
+\pause
+\begin{wideitemize}
+\item Intuition: upweight study units who look ``target-like'' on \(X\).\pause
+\item This is direct standardization in disguise (and closely related to survey weights).\pause
+\item Inference: default to robust (sandwich) SEs for weighted estimators.\hfill \citeptitle{cole-stuart_2010}\pause
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{A simple estimator for \(\tau_T\) (weighted RCT within \(S=1\))}
+\small
+Under sampling ignorability and overlap,\pause
+\[
+\tau_T
+= \E\!\left[\E[Y(1)-Y(0)\mid X, S=1] \mid S=0\right].
+\]
+\pause
+One implementation (Cole--Stuart / Tipton):\pause
+\begin{wideitemize}
+\item Estimate \(e_S(X)\).\pause
+\item Compute weights \(w_i\propto (1-\hat e_S(X_i))/\hat e_S(X_i)\) for \(S=1\) units.\pause
+\item Estimate \(\tau_T\) as a weighted treated--control difference \emph{inside the trial}:\pause
+\[
+\widehat{\tau}_T = \bar Y_{D=1,w} - \bar Y_{D=0,w}.
+\]\pause
+\end{wideitemize}
+\footnotesize
+Outcome-model standardization (and doubly robust variants) are alternative implementations of the same idea: average over the target \(X\)-distribution. \citep{cole-stuart_2010} \citep{tipton_2013}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Precision intuition: extreme weights \(\Rightarrow\) tiny effective sample size}
+\small
+With weighting, precision often depends more on the \emph{effective sample size} than the raw \(n\):\pause
+\[
+\mathrm{ESS} \equiv \frac{\left(\sum_i w_i\right)^2}{\sum_i w_i^2}.
+\]
+\pause
+\begin{wideitemize}
+\item When study and target are similar in \(X\), weights are mild and ESS is close to \(n\).\pause
+\item When study and target are far apart, weights become extreme and ESS collapses.\pause
+\item With no overlap, transport fails: you are extrapolating beyond the data.\pause
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Diagnostics checklist}
+\small
+\begin{wideitemize}
+\item Define the target estimand first (what population/context?).\pause
+\item Compare \(X\) distributions across \(S=1\) and \(S=0\).\pause
+\item Plot the sampling propensity score and check overlap.\pause
+\item Inspect weight distributions (max, tail behavior, ESS).\pause
+\item Check balance after weighting (e.g., standardized mean differences).\pause
+\item Sensitivity: different moderator sets \(X\), functional forms, trimming/restriction.\pause
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{transitionframe}
+\centering
+\color{white}
+\Large Applied demo: NSW trial \(\rightarrow\) CPS target
+\end{transitionframe}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Demo setup}
+\small
+\begin{wideitemize}
+\item Study sample \(S=1\): the NSW job-training experiment (\texttt{nsw}).\pause
+\item Target sample \(S=0\): CPS covariate distribution (\texttt{cps1}).\pause
+\item Goal: estimate the ATE for the target using inverse-odds weights.\pause
+\end{wideitemize}
+
+\vspace{0.3em}
+\pause
+\footnotesize
+This is the Cole--Stuart logic in a simple difference-in-means setting (no survival model): estimate \(\Pr[S=1\mid X]\), weight the trial, then re-estimate the treatment effect. \citep{cole-stuart_2010}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Sampling propensity score overlap (linear scale)}
+\small
+First, the standard plot on a 0--1 x-axis.\pause
+On this scale, most of the target mass is piled near 0, so the overlap is hard to see.\pause
+
+<<ev-ps-overlap-linear, echo=FALSE, fig=TRUE, height=3.4, width=7.5>>=
+ggplot(df_ps, aes(x = ps, color = sample, fill = sample)) +
+  geom_density(alpha = 0.25, linewidth = 0.9, adjust = 1.2, trim = TRUE) +
+  geom_vline(xintercept = th_overlap, linetype = "dashed", color = "grey40", alpha = 0.7) +
+  scale_color_manual(values = ev_palette) +
+  scale_fill_manual(values = ev_palette) +
+  coord_cartesian(xlim = c(0, 1)) +
+  labs(
+    x = "Estimated Pr(in study) (linear scale)",
+    y = "Density",
+    color = NULL,
+    fill = NULL
+  ) +
+  guides(fill = "none") +
+  custom_theme
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Sampling propensity score overlap (log scale): \(\hat e_S(X)=\Pr[S=1\mid X]\)}
+\small
+If overlap is weak, the weights needed to match the target become extreme.\pause
+
+<<ev-ps-overlap, echo=FALSE, fig=TRUE, height=3.4, width=7.5>>=
+ggplot(df_ps, aes(x = ps, color = sample, fill = sample)) +
+  geom_density(alpha = 0.25, linewidth = 0.9, adjust = 1.2, trim = TRUE) +
+  geom_vline(xintercept = th_overlap, linetype = "dashed", color = "grey40", alpha = 0.7) +
+  scale_color_manual(values = ev_palette) +
+  scale_fill_manual(values = ev_palette) +
+  scale_x_log10(
+    breaks = c(1e-4, 1e-3, 1e-2, 1e-1, 1),
+    labels = c("0.0001", "0.001", "0.01", "0.1", "1")
+  ) +
+  labs(
+    x = "Estimated Pr(in study) (log10 scale)",
+    y = "Density",
+    color = NULL,
+    fill = NULL
+  ) +
+  guides(fill = "none") +
+  custom_theme
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Inverse-odds weights in the NSW study sample}
+\small
+Weights are \(w_i\propto (1-\hat e_S(X_i))/\hat e_S(X_i)\) for \(S=1\) units.\pause
+
+<<ev-weight-hist, echo=FALSE, fig=TRUE, height=3.2, width=7.5>>=
+df_w <- data.frame(w = w_full)
+ggplot(df_w, aes(x = w)) +
+  geom_histogram(bins = 45, fill = cbPalette[3], color = "white") +
+  scale_x_log10() +
+  labs(
+    x = "Normalized inverse-odds weight (log10 scale)",
+    y = "Count"
+  ) +
+  custom_theme +
+  theme(legend.position = "none")
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{What happens here? (a cautionary example)}
+\small
+\begin{wideitemize}
+\item NSW SATE (study ATE): \(\widehat{\tau}_S \approx \Sexpr{round(tau_sate,0)}\).\pause
+\item Weighted estimate targeting CPS: \(\widehat{\tau}_T \approx \Sexpr{round(tau_tate_full,0)}\).\pause
+\item Effective sample size under weights: ESS \(\approx \Sexpr{round(ess_full,1)}\) (out of \(n=\Sexpr{nrow(study)}\)).\pause
+\end{wideitemize}
+
+\vspace{0.3em}
+\pause
+\textbf{Interpretation:} most of the CPS target population looks unlike the NSW study sample on observed covariates, so the generalization attempt relies on a handful of heavily-weighted study units.
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Two honest responses to weak overlap}
+\small
+\begin{wideitemize}
+\item \textbf{Redefine the target:} transport only to the overlap region (common support).\pause
+\item \textbf{Or keep the target but accept uncertainty:} trim/regularize weights and show sensitivity.\pause
+\end{wideitemize}
+
+\vspace{0.4em}
+\pause
+Neither option ``fixes'' missing moderators or context changes; it just makes the statistical problem better behaved.
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{An overlap-restricted target (illustration)}
+\small
+Restrict the CPS target to units with \(\hat e_S(X)\ge \Sexpr{th_overlap}\), i.e., units that look plausibly trial-eligible on observed \(X\):\pause
+\begin{wideitemize}
+\item Size of restricted target: \(\Sexpr{nrow(target_overlap)}\) (\(\approx \Sexpr{round(100*share_overlap,1)}\%\) of CPS).\pause
+\item Weighted estimate for this restricted target: \(\widehat{\tau}_{T,\mathrm{overlap}} \approx \Sexpr{round(tau_tate_overlap,0)}\).\pause
+\item ESS under overlap weights: \(\approx \Sexpr{round(ess_overlap,1)}\).\pause
+\end{wideitemize}
+
+\vspace{0.3em}
+\pause
+\textbf{Message:} statistical generalization is often only credible for a \emph{narrower} target than we hoped.
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Tipton: the \"two bridges\" (statistical + substantive)}
+\small
+\begin{wideitemize}
+\item \textbf{Statistical bridge:} make \(S=1\) look like \(S=0\) on moderators \(X\) (weighting/stratification).\pause
+\item \textbf{Substantive bridge:} argue that these \(X\) variables are the right moderators and that mechanisms are stable.\pause
+\end{wideitemize}
+
+\vspace{0.4em}
+\pause
+Tipton emphasizes \textbf{subclassification} on the sampling propensity score as a stable alternative to raw IPW.\hfill \citeptitle{tipton_2013}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Multi-site experiments: heterogeneity is the point}
+\small
+\begin{wideitemize}
+\item Think of sites as contexts: treatment effects may vary by site and site covariates.\pause
+\item External validity goals:\pause
+  \begin{itemize}
+  \item learn \(\tau(\text{site})\) or \(\tau(x)\) (moderation), then average over a target mix;\pause
+  \item quantify heterogeneity and uncertainty (partial pooling / hierarchical models).\pause
+  \end{itemize}
+\item Warning: sites are rarely a random sample of ``all sites'' \(\Rightarrow\) site selection is an external-validity problem too.\pause
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Design-based external validity (what to do before you estimate)}
+\small
+\begin{wideitemize}
+\item Build a sampling frame for the target population.\pause
+\item Use probability sampling (or purposive oversampling) of key subgroups/contexts.\pause
+\item Block/stratify on plausible moderators to learn heterogeneity.\pause
+\item Measure baseline covariates you will need for standardization later.\pause
+\item Report the target explicitly in the paper (who/where/when).\pause
+\end{wideitemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{transitionframe}
+\centering
+\color{white}
+\Large Why transport is not automatic (even with RCTs)
+\end{transitionframe}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Deaton \& Cartwright: what RCTs do (and do not) buy you}
+\small
+\begin{wideitemize}
+\item Randomization helps with internal validity, not automatic generalization.\pause
+\item External validity depends on \textbf{invariance}: which causal relationships are stable across settings.\pause
+\item ``Same treatment'' may not be the same intervention (versions, compliance, spillovers).\pause
+\item Causes can require \textbf{support factors} (enabling conditions) that differ across contexts.\pause
+\item Randomization balances covariates \emph{in expectation}, not necessarily in a realized finite sample.\pause
+\end{wideitemize}
+
+\vspace{0.3em}
+\pause
+\footnotesize
+The reading's main message: external validity is not a checkbox; it is an argument about mechanisms + context. \citep{deaton-cartwright_2018}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Support factors (mechanisms) as ``unmeasured moderators''}
+\small
+\begin{wideitemize}
+\item Weighting/standardization assumes we measured the moderators \(X\).\pause
+\item Deaton--Cartwright emphasize that important moderators are often \textbf{contextual}:\pause
+  \begin{itemize}
+  \item institutions, implementation capacity, norms, market responses, networks/spillovers.\pause
+  \end{itemize}
+\item If those differ across settings and are unmeasured, reweighting can still fail.\pause
+\end{wideitemize}
+
+\vspace{0.4em}
+\pause
+\textbf{Good practice:} say what you would need to observe (or what additional study you'd run) to justify transport.
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{transitionframe}
+\centering
+\color{white}
+\Large Pearl \& Bareinboim: selection diagrams and ``licenses to transport''
+\end{transitionframe}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Pearl \& Bareinboim: transportability as identification}
+\small
+\begin{wideitemize}
+\item A selection diagram is a DAG plus nodes \(S\) indicating what differs across populations.\pause
+\item Transportability asks: can we write the target causal effect using (i) study causal knowledge + (ii) target covariate information?\pause
+\item The goal is explicit assumptions (``licenses to transport''), not a list of threats.\pause
+\end{wideitemize}
+
+\vspace{0.2em}
+\pause
+\footnotesize
+We'll keep this high level; the big idea is: sometimes standardization is sufficient, sometimes you need additional measurements, and sometimes it is impossible without new data. \citep{pearl-bareinboim_2014}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}{Selection diagrams: when reweighting is (and isn't) enough}
+\footnotesize
+\begin{center}
+\begin{tikzpicture}[>=Stealth, node distance=1.8cm]
+  \node[draw, circle, minimum size=0.9cm] (X) {$X$};
+  \node[draw, circle, minimum size=0.9cm, right=2.3cm of X] (Y) {$Y$};
+  \node[draw, circle, minimum size=0.9cm, above=1.4cm of X] (D) {$D$};
+  \node[draw, circle, minimum size=0.9cm, below=1.4cm of X] (S) {$S$};
+
+  \draw[->] (X) -- (Y);
+  \draw[->] (D) -- (Y);
+  \draw[->] (S) -- (X);
+\end{tikzpicture}
+\hspace{1.2cm}
+\begin{tikzpicture}[>=Stealth, node distance=1.8cm]
+  \node[draw, circle, minimum size=0.9cm] (X2) {$X$};
+  \node[draw, circle, minimum size=0.9cm, right=2.3cm of X2] (Y2) {$Y$};
+  \node[draw, circle, minimum size=0.9cm, above=1.4cm of X2] (D2) {$D$};
+  \node[draw, circle, minimum size=0.9cm, below=1.4cm of X2] (S2) {$S$};
+
+  \draw[->] (X2) -- (Y2);
+  \draw[->] (D2) -- (Y2);
+  \draw[->] (S2) -- (X2);
+  \draw[->, dashed] (S2) -- (Y2);
+\end{tikzpicture}
+\end{center}
+
+\vspace{-0.1em}
+\pause
+\begin{itemize}
+\item Left: if populations differ only in the distribution of \(X\), standardization/weighting can work.\pause
+\item Right: if the outcome mechanism differs across populations (dashed \(S\to Y\)), reweighting on \(X\) is not sufficient.\pause
+\end{itemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\backupbegin
+%-------------------------------------------------------------------------------%
+
+\begin{frame}[fragile]{Backup: code sketch for the demo (NSW \(\rightarrow\) CPS)}
+\tiny
+<<ev-demo-code, echo=TRUE, results=hide, fig=FALSE>>=
+# NSW trial (S=1) -> CPS target covariates (S=0)
+Xvars <- c("age", "education", "black", "hispanic", "married", "nodegree", "re75", "u75")
+comb <- rbind(transform(nsw, S = 1)[, c("S", Xvars)], transform(cps1, S = 0)[, c("S", Xvars)])
+sel_fit <- glm(S ~ ., data = comb, family = binomial())
+ps <- predict(sel_fit, newdata = nsw, type = "response")
+w <- (1 - ps) / ps
+w <- w / mean(w)  # normalize so mean weight = 1
+tau_tate <- with(nsw, weighted.mean(re78[treat == 1], w[treat == 1]) - weighted.mean(re78[treat == 0], w[treat == 0]))
+tau_tate
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[fragile]{Backup: balance diagnostics (standardized mean differences)}
+\small
+\begin{wideitemize}
+\item Compare study vs target on \(X\): before and after weighting.\pause
+\item With weak overlap, ``good balance'' can come from a few extreme weights \(\Rightarrow\) always pair balance with ESS/weight diagnostics.\pause
+\end{wideitemize}
+
+<<ev-balance-fig, echo=FALSE, fig=TRUE, height=3.7, width=7.5>>=
+df_bal <- rbind(
+  data.frame(var = balance_df$var, smd = balance_df$smd_unw_full, which = "Unweighted (full CPS)"),
+  data.frame(var = balance_df$var, smd = balance_df$smd_w_full, which = "Weighted (full CPS)"),
+  data.frame(var = balance_df$var, smd = balance_df$smd_unw_overlap, which = "Unweighted (overlap CPS)"),
+  data.frame(var = balance_df$var, smd = balance_df$smd_w_overlap, which = "Weighted (overlap CPS)")
+)
+df_bal$var <- factor(df_bal$var, levels = rev(Xvars))
+
+ggplot(df_bal, aes(x = smd, y = var, color = which)) +
+  geom_vline(xintercept = 0, linewidth = 0.4, color = "gray50") +
+  geom_point(aes(shape = which), size = 2.1) +
+  geom_vline(xintercept = c(-0.1, 0.1), linetype = "dashed", color = "grey40", alpha = 0.7) +
+  scale_color_manual(
+    values = c(
+      "Unweighted (full CPS)" = cbPalette[1],
+      "Weighted (full CPS)" = cbPalette[3],
+      "Unweighted (overlap CPS)" = cbPalette[2],
+      "Weighted (overlap CPS)" = cbPalette[4]
+    )
+  ) +
+  scale_shape_manual(
+    values = c(
+      "Unweighted (full CPS)" = 1,
+      "Weighted (full CPS)" = 16,
+      "Unweighted (overlap CPS)" = 2,
+      "Weighted (overlap CPS)" = 17
+    )
+  ) +
+  labs(x = "Standardized mean difference (study - target)", y = NULL, color = NULL) +
+  custom_theme
+@
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\begin{frame}[allowframebreaks]{References}
+\bibliographystyle{apalike}
+\nocite{cole-stuart_2010}
+\nocite{deaton-cartwright_2018}
+\nocite{tipton_2013}
+\nocite{pearl-bareinboim_2014}
+\bibliography{../assets/PLSC30600}
+\end{frame}
+
+%-------------------------------------------------------------------------------%
+\backupend
+\end{document}
