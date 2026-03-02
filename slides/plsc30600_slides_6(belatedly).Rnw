@@ -515,11 +515,11 @@ $$
 \item Design: complete randomization with $N=7$ villages and exactly $n_1=2$ treated.\pause
 \item Each assignment vector $\bm{D}$ with $\sum_i D_i = 2$ is equally likely:
 \[
-\Pr(\bm{D}=\bm{d})=\frac{1}{\binom{7}{2}}=\frac{1}{21}.
+\Pr[\bm{D}=\bm{d}]=\frac{1}{\binom{7}{2}}=\frac{1}{21}.
 \]\pause
 \item The marginal assignment probability is the same for each village:
 \[
-\pi_i \equiv \Pr(D_i=1)=\frac{2}{7}.
+\pi_i \equiv \Pr[D_i=1]=\frac{2}{7}.
 \]
 \end{itemize}
 
