@@ -1,0 +1,167 @@
+---
+title: "Take-Home Final: TWFE and Modern DiD with staggered adoption)"
+output:
+  pdf_document:
+    number_sections: false
+header-includes:
+  - "\\usepackage[margin=1in]{geometry}"
+  - "\\usepackage{amsmath, amssymb, amsthm}"
+  - "\\usepackage{bm}"
+  - "\\usepackage{booktabs}"
+  - "\\usepackage{enumitem}"
+  - "\\usepackage{hyperref}"
+  - "\\setlist[itemize]{noitemsep, topsep=2pt}"
+  - "\\setlist[enumerate]{itemsep=4pt, topsep=6pt}"
+  - "\\newcommand{\\E}{\\textrm{E}}"
+  - "\\newcommand{\\one}{\\bm{\\mathbf{1}}}"
+---
+  
+\textbf{Assigned:} Mon, March 2 \\
+\textbf{Due:} Fri, March 6 (11:59pm)
+
+# Overview
+
+This take-home final is an applied differences-in-differences exercise with panel data.
+You will:
+
+1) estimate a two-way fixed effects (TWFE) model,
+2) build an event-study plot, and
+3) re-estimate the dynamic effects using a modern estimator designed for staggered adoption.
+
+# General instructions
+
+- Submit a compiled PDF *and* your reproducible code (`.R`/`.Rmd`).
+- Include a brief note describing how you used AI tools (if at all), consistent with the course AI policy.
+- Unless a problem asks for a specific format, write short answers and focus on interpretation.
+
+# Packages
+
+You may use any R packages you want. If you use specialized DiD packages (e.g., Callaway–Sant’Anna’s `did`), briefly describe what comparison group they use (never-treated vs not-yet-treated) and what estimand your plot represents.
+
+# Data
+
+We will use the `Fatalities` panel dataset from `AER` (48 U.S. states, 1982–1988).
+The policy is the minimum legal drinking age (MLDA), recorded as `drinkage`.
+
+We will focus on traffic fatality rates among 18–20 year olds.
+
+## Setup (run this first)
+
+```{r setup, message=FALSE, warning=FALSE}
+library(AER)
+library(dplyr)
+library(ggplot2)
+library(fixest)
+
+data("Fatalities")
+
+df <- Fatalities |>
+  mutate(
+    year = as.integer(as.character(year)),
+    state = as.character(state),
+    # Outcome: fatalities per 100,000 people age 18-20
+    y = 100000 * fatal1820 / pop1820,
+    logy = log(y),
+    # Treatment indicator: MLDA == 21
+    D = as.integer(drinkage == 21)
+  ) |>
+  group_by(state) |>
+  mutate(
+    # First-treated year (cohort); Inf for never-treated states
+    G = if (any(D == 1)) min(year[D == 1]) else Inf,
+    ever = as.integer(is.finite(G)),
+    # For convenience: define event_time for never-treated states as 0
+    event_time = ifelse(is.finite(G), year - G, 0L)
+  ) |>
+  ungroup()
+```
+
+# Problems
+
+## 1) Treatment timing + descriptive plots
+
+1.1 Create a table showing how many states have first-treated year \(G\in\{1982,\dots,1988\}\), plus how many are never treated (\(G=\infty\)).
+
+Deliverable: one small table + brief interpretation.
+
+1.2 Make a plot showing treatment timing by state and year (e.g., a heatmap of \(D_{it}\) over time).
+Order states on the y-axis by their first-treated year \(G\).
+
+Deliverable: one figure + brief description what you see.
+
+1.3 Plot the average outcome \(y_{it}\) over time for states that are treated in a given year (i.e., \(D_{it}=1\)) vs untreated that year (i.e., \(D_{it}=0\)).
+
+Deliverable: one figure. 
+
+## 2) Baseline TWFE (levels and inference)
+
+Let \(Y_{it}=\log(y_{it})\).
+
+2.1 Estimate the TWFE model
+\[
+Y_{it}=\alpha_i+\lambda_t+\tau D_{it}+\varepsilon_{it}.
+\]
+Use state and year fixed effects and **cluster standard errors by state**.
+
+Deliverable: report \(\hat\tau\), a 95% CI, and interpret the magnitude in percent terms.
+
+2.2 Repeat 2.1 but report **i.i.d. (non-clustered) standard errors**. Compare the i.i.d. SE to the clustered SE and briefly explain which is more credible here and why.
+
+Deliverable: one short paragraph.
+
+2.3 Add controls \(X_{it}\) of your choice (at least three) and re-estimate the TWFE model. Suggested controls (choose at least three): `income`, `unemp`, `beertax`, `spirits`, `miles`, `emppop`.
+
+Deliverable: one regression table (baseline + controls) and briefly compare the estimates.
+
+## 3) Event studies: TWFE vs a modern approach
+
+This section asks you to estimate dynamic effects around adoption.
+
+**Important sample note:** States with \(G=1982\) are treated from the first year we observe, so they have no pre-treatment period in the sample. For event studies, drop states with \(G=1982\).
+
+```{r}
+df_es <- df |> filter(G > min(year) | !is.finite(G))
+```
+
+3.1 **Naive TWFE event-study regression.** Estimate an event-study TWFE regression using event time \(k=t-G_i\):
+\[
+Y_{it}=\alpha_i+\lambda_t+\sum_{k\neq -1}\beta_k \one\{t-G_i=k\}\cdot \one\{G_i<\infty\}+\varepsilon_{it},
+\]
+with \(k=-1\) as the omitted baseline. Cluster by state.
+
+Hint (one way): use `fixest::i(event_time, ever, ref = -1)` on `df_es`.
+
+Deliverable: an event-study plot (leads + lags) + 5–10 sentences interpreting (i) pre-trends and (ii) post-treatment dynamics.
+
+3.2 **Modern event-study estimator for staggered adoption.** Re-estimate dynamic effects using the Sun & Abraham (2021) interaction-weighted approach, implemented in `fixest` via `sunab(G, year)` in a TWFE regression.
+
+Deliverable: an event-study plot + 1–3 sentences comparing this plot to the naive TWFE plot in 3.1.
+
+3.3 Short answer: Explain (conceptually) why the naive TWFE event-study coefficients can be hard to interpret under staggered adoption with heterogeneous effects.
+
+3.4 *(Optional, fect replication)* The `fect` package (Xu, 2024) provides a unified interface (`did_wrapper`) for estimating TWFE event studies and modern DiD estimators (including interaction-weighted and Callaway--Sant'Anna style estimators), plus built-in event-study plotting (`esplot`).
+
+If you choose this option, do the following:
+
+1) Install/load `fect` (once):
+
+```{r, eval=FALSE}
+install.packages("fect")
+library(fect)
+```
+
+2) Estimate event studies with at least **two** methods using `df_es`:
+
+- TWFE (baseline): `method = "twfe"`
+- Modern: choose one or both of `method = "iw"` (interaction-weighted) and `method = "cs_notyet"` (not-yet-treated comparisons)
+
+```{r, eval=FALSE}
+# Some methods (e.g., Callaway--Sant'Anna via {did}) require a numeric unit id.
+df_es_fect <- df_es |>
+  mutate(state_id = as.integer(factor(state)))
+```
+
+3) Plot the event studies with `esplot(...)` and compare the results to your `fixest` plots in 3.1--3.2.
+
+
+*Note:* If you use this option, add a short sentence explaining what control group the method uses (e.g., never-treated vs not-yet-treated).
