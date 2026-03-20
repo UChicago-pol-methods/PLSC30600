@@ -1,5 +1,5 @@
 ---
-title: "Take-Home Final: TWFE and Modern DiD with staggered adoption)"
+title: "PLSC 30600 --- Take-Home Final: TWFE and Modern DiD with Staggered Adoption"
 output:
   pdf_document:
     number_sections: false
@@ -16,8 +16,11 @@ header-includes:
   - "\\newcommand{\\one}{\\bm{\\mathbf{1}}}"
 ---
   
-\textbf{Assigned:} Mon, March 2 \\
 \textbf{Due:} Fri, March 6 (11:59pm)
+
+\vspace{0.75em}
+\hrule
+\vspace{0.75em}
 
 # Overview
 

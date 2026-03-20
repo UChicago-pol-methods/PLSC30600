@@ -1,5 +1,5 @@
 ---
-title: 'Take-Home Midterm: LaLonde (1986) and Nonexperimental ATT'
+title: "PLSC 30600 --- Take-Home Midterm: LaLonde (1986) and Nonexperimental ATT"
 output:
   pdf_document:
     number_sections: false
@@ -23,6 +23,10 @@ header-includes:
 ---
 
 \textbf{Due:} Friday, February 13 (11:59pm)
+
+\vspace{0.75em}
+\hrule
+\vspace{0.75em}
 
 # Overview
 
@@ -230,4 +234,3 @@ For the placebo, use five datasets: `exp_df`, `cps_untrim`, `psid_untrim`, and
 
 Deliverable: one table with estimates + bootstrap 95% CIs. 
 Optional: plot estimates. 
-
