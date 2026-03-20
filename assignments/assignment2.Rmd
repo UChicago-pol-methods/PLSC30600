@@ -121,9 +121,9 @@ Write out at least one entry (e.g., the $(1,2)$ entry) step-by-step, such as
 
 \section*{Problem 1: Weighting estimators}
 \textbf{IPW formula.}
-  Let $p_D(X_i)\in(0,1)$ be the propensity score for unit $i$. The IPW estimator for the ATE is:
+  Let $p_D(\X_i)\in(0,1)$ be the propensity score for unit $i$. The IPW estimator for the ATE is:
   \[
-  \hat\tau_{\text{IPW}}=\frac{1}{n}\sum_{i=1}^n \left(\frac{D_i Y_i}{p_D(X_i)}-\frac{(1-D_i)Y_i}{1-p_D(X_i)}\right).
+  \hat\tau_{\text{IPW}}=\frac{1}{n}\sum_{i=1}^n \left(\frac{D_i Y_i}{p_D(\X_i)}-\frac{(1-D_i)Y_i}{1-p_D(\X_i)}\right).
   \]
 
 \begin{enumerate}[label=\textbf{1.\alph*}]
@@ -242,7 +242,7 @@ selection variable $S$:
   \]
   equal to the principal-stratum causal effect
   \[
-  \E\!\big[\,Y(1)-Y(0)\ \big|\ S(1)=1,\ S(0)=1\,\big] \ ? 
+  \E\!\big[Y(1)-Y(0)\mid S(1)=1,\ S(0)=1\big] \ ? 
   \]
   Explain in 2--4 sentences. (If you think it can be given a causal interpretation only
   under additional assumptions, state one such assumption.)
@@ -253,11 +253,11 @@ selection variable $S$:
 \hrule
 \vspace{0.75em}
 
-\section*{Problem 4: LaLonde data}
-
+\section*{Coding section}
+\subsection*{Coding A: LaLonde data}
 
 \textbf{Data.} Use the experimental LaLonde dataset:
-Download the file from github. \\
+Download the file from github. 
 
 \texttt{https://raw.githubusercontent.com/xuyiqing/lalonde/master/data/lalonde/nsw.dta}.
 
@@ -289,8 +289,7 @@ nsw <- read_dta(nsw_url)
 nsw <- as.data.frame(nsw)
 \end{verbatim}
 
-
-\begin{enumerate}[label=\textbf{4.\alph*}]
+\begin{enumerate}[label=\textbf{A\arabic*.}]
   \item \textbf{Read and inspect.}
   Load the dataset and report:
   \begin{enumerate}[label=(\roman*)]
@@ -306,14 +305,14 @@ nsw <- as.data.frame(nsw)
   $\widehat{\tau}_{\text{DM}}=\bar{Y}_{D=1}-\bar{Y}_{D=0}$.
 
   \item \textbf{Propensity score estimation and overlap.}
-  Estimate the propensity score $\widehat{p}_D(X_i)=\Pr[D_i=1\mid X_i]$ using a logit model with \texttt{glm(..., family = binomial())}. Use the covariates \texttt{age}, \texttt{education}, \texttt{black}, \texttt{hispanic}, \texttt{married}, \texttt{nodegree}, and \texttt{re75}. After fitting the model, use \texttt{predict(..., type = "response")} to get propensity scores. Then plot treated vs control distributions (histograms or density plots) with the same x-axis limits to assess overlap.
+  Estimate the propensity score $\widehat{p}_D(\X_i)=\Pr[D_i=1\mid \X_i]$ using a logit model with \texttt{glm(..., family = binomial())}. Use the covariates \texttt{age}, \texttt{education}, \texttt{black}, \texttt{hispanic}, \texttt{married}, \texttt{nodegree}, and \texttt{re75}. After fitting the model, use \texttt{predict(..., type = "response")} to get propensity scores. Then plot treated vs control distributions (histograms or density plots) with the same x-axis limits to assess overlap.
 Comment on overlap.
 
   \item \textbf{IPW estimator.}
   Using the estimated propensity scores, compute the IPW ATE:
   \[
     \widehat{\tau}_{\text{IPW}}
-    =\frac{1}{n}\sum_{i=1}^n\left(\frac{D_iY_i}{\widehat{p}_D(X_i)}-\frac{(1-D_i)Y_i}{1-\widehat{p}_D(X_i)}\right).
+    =\frac{1}{n}\sum_{i=1}^n\left(\frac{D_iY_i}{\widehat{p}_D(\X_i)}-\frac{(1-D_i)Y_i}{1-\widehat{p}_D(\X_i)}\right).
   \]
   Compute an approximate 95\% confidence interval using the nonparametric bootstrap.
   \textit{Hint:} include propensity score estimation inside each bootstrap resample.

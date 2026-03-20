@@ -6,12 +6,14 @@ output:
 header-includes:
   - "\\usepackage[margin=1in]{geometry}"
   - "\\usepackage{amsmath, amssymb, amsthm}"
+  - "\\usepackage{bm}"
   - "\\usepackage{booktabs}"
   - "\\usepackage{enumitem}"
   - "\\usepackage{hyperref}"
   - "\\setlist[itemize]{noitemsep, topsep=2pt}"
   - "\\setlist[enumerate]{itemsep=4pt, topsep=6pt}"
   - "\\newcommand{\\E}{\\textrm{E}}"
+  - "\\newcommand{\\X}{\\bm{X}}"
 ---
 \textbf{Due:} Fri, January 16 (11:59pm)
 
@@ -182,24 +184,24 @@ Using the result from Problem 0(a), prove that both $\hat\mu_{\text{MCAR}}$ and 
 
 \section*{Problem 2: Propensity scores for missing data}
 
-Let $p_R(X)\equiv \Pr[R=1\mid X]$ and assume MAR given $X$: $Y \perp R \mid X$.
+Let $p_R(\X)\equiv \Pr[R=1\mid \X]$ and assume MAR given $\X$: $Y \perp R \mid \X$.
 
 \begin{enumerate}[label=\textbf{2.\alph*}]
   \item \textbf{Balance (conditioning on the propensity score).}
   Show that
   \[
-    R \perp X \mid p_R(X).
+    R \perp \X \mid p_R(\X).
   \]
   \emph{Hint:} because $R$ is binary, it suffices to show
-  $\E[R\mid X, p_R(X)] = \E[R\mid p_R(X)]$.
+  $\E[R\mid \X, p_R(\X)] = \E[R\mid p_R(\X)]$.
 
   \item \textbf{Outcome--response independence given the propensity score.}
   Show that
   \[
-    Y \perp R \mid p_R(X).
+    Y \perp R \mid p_R(\X).
   \]
   \emph{Hint:} again use the binary-$R$ trick and the Law of Iterated Expectations; under MAR,
-  $\E[R\mid Y,X]=\E[R\mid X]=p_R(X)$.
+  $\E[R\mid Y,\X]=\E[R\mid \X]=p_R(\X)$.
 \end{enumerate}
 
 \vspace{0.75em}
