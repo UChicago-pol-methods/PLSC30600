@@ -1,7 +1,14 @@
 % !Rnw weave = Sweave
-\documentclass[xcolor={dvipsnames}]{beamer}
+\documentclass[xcolor={dvipsnames}, handout]{beamer}
 
-\RequirePackage{../assets/pres-template_MOW}
+% Allow compilation from repo root or from /slides.
+\newcommand{\plscassetpath}{../assets}
+\IfFileExists{../assets/pres-template_MOW.sty}{}{%
+  \renewcommand{\plscassetpath}{assets}%
+}
+
+\RequirePackage{\plscassetpath/pres-template_MOW}
+\graphicspath{{./}{slides/}{assets/}{../assets/}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \setlength{\tabcolsep}{1.3pt}
@@ -12,7 +19,9 @@
 \institute{Department of Political Science, \\University of Chicago}
 
 \begin{document}
-\SweaveOpts{concordance=TRUE}
+% Concordance files make root-level pdflatex runs brittle because Sweave emits
+% a bare \input{...-concordance} path.
+\SweaveOpts{concordance=FALSE}
 
 %-------------------------------------------------------------------------------%
 \frame{\titlepage
@@ -43,24 +52,28 @@ Y <- rbeta(n, mu * phi, (1 - mu) * phi)
 library(ggplot2)
 library(dplyr)
 library(tidyr)
-library(ggdist)
 
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73",
                "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-theme_base <- if (requireNamespace("hrbrthemes", quietly = TRUE)) {
-  hrbrthemes::theme_ipsum_rc(base_size = 13)
-} else {
-  theme_minimal(base_size = 13)
-}
-
-custom_theme <- theme_base +
+# Course-wide figure theme
+custom_theme <- theme_minimal(base_size = 12) +
   theme(
-    plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
     axis.title = element_text(size = 12),
-    axis.text = element_text(size = 11),
+    axis.text = element_text(size = 10),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 11, face = "bold"),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.25),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA),
+    plot.margin = margin(10, 10, 10, 10),
+    axis.ticks.length = unit(5, "pt"),
+    axis.ticks = element_line(linewidth = 0.5),
     legend.position = "bottom",
-    panel.grid.minor = element_blank()
+    legend.background = element_rect(fill = "white", color = NA),
+    strip.background = element_blank()
   )
 
 set.seed(30600)
@@ -210,7 +223,7 @@ plot_estimators <- ggplot(estimates, aes(x = x_num, y = estimate, color = estima
   custom_theme +
   theme(axis.text.x = element_text(angle = 20, hjust = 0.5))
 
-B <- 1000
+B <- 500
 boot_df <- lapply(c("MCAR","MAR","MNAR"), function(m) {
   r_all <- list(MCAR = r_mcar, MAR = r_mar, MNAR = r_mnar)[[m]]
   boot_mat <- replicate(B, {
@@ -278,7 +291,7 @@ plot_estimators
 \begin{frame}[fragile]{Bootstrap: sampling variability}
 \scriptsize
 \begin{verbatim}
-B <- 1000
+B <- 500
 boot_df <- lapply(c("MCAR","MAR","MNAR"), function(m) {
   r_all <- list(MCAR = r_mcar, MAR = r_mar, MNAR = r_mnar)[[m]]
   boot_mat <- replicate(B, {
@@ -319,10 +332,8 @@ boot_long <- boot_df |>
   )
 
 plot_boot <- ggplot(boot_long, aes(x = estimator, y = estimate, fill = estimator)) +
-  ggdist::stat_slab(aes(thickness = after_stat(pdf * n)),
-                    scale = 0.7, orientation = "vertical") +
-  ggdist::stat_dotsinterval(side = "left", scale = 0.7,
-                            slab_linewidth = NA, orientation = "vertical") +
+  geom_violin(alpha = 0.75, linewidth = 0.3, trim = FALSE) +
+  geom_boxplot(width = 0.14, outlier.shape = NA, alpha = 0.9, linewidth = 0.3) +
   facet_wrap(~ mechanism, nrow = 1) +
   geom_hline(yintercept = true_mu, linetype = "dashed", color = "grey40") +
   scale_fill_manual(values = c("MCAR" = cbPalette[6],
@@ -389,7 +400,7 @@ ci_95 <- boot_df |>
 \end{frame}
 
 %-------------------------------------------------------------------------------%
-\begin{frame}{Bootstrap CIs + bias summary}
+\begin{frame}{Bootstrap summaries + MC CI coverage}
 \begin{center}
 <<fig=TRUE, echo=FALSE, fig.width=10, fig.height=3.2>>=
 summary_tbl <- boot_df |>
@@ -406,12 +417,13 @@ summary_tbl <- boot_df |>
     bias = ifelse(estimator %in% c("mcar", "mar"), mean_est - true_mu, NA_real_),
     estimator = factor(estimator,
                         levels = c("mcar", "mar", "manski_lo", "manski_hi"),
-                        labels = c("MCAR", "MAR", "Manski lower", "Manski upper"))
+                        labels = c("MCAR", "MAR", "Manski lo", "Manski hi"))
   ) |>
   arrange(mechanism, estimator)
 
-S <- 200
-B_cover <- 1e3
+# Keep the coverage simulation moderate so the mini deck recompiles quickly.
+S <- 80
+B_cover <- 250
 coverage_rates <- lapply(c("MCAR","MAR","MNAR"), function(m) {
   cover_mcar <- logical(S)
   cover_mar <- logical(S)
@@ -464,11 +476,34 @@ tab <- summary_tbl |>
   mutate(coverage_rate = ifelse(is.na(coverage_rate), "--", coverage_rate)) |>
   select(mechanism, estimator, lo, hi, bias, coverage_rate)
 
-gridExtra::grid.table(tab)
+names(tab) <- c(
+  "Mech.",
+  "Est.",
+  "CI lo\n(1 samp)",
+  "CI hi\n(1 samp)",
+  "Bias\n(1 samp)",
+  "Cover\n(MC)"
+)
+
+gridExtra::grid.table(
+  tab,
+  rows = NULL,
+  theme = gridExtra::ttheme_minimal(base_size = 8)
+)
 @
 \end{center}
 \end{frame}
 
 %-------------------------------------------------------------------------------%
+
+\backupbegin
+%-------------------------------------------------------------------------------%
+\begin{frame}[allowframebreaks]{References}
+\bibliographystyle{apalike}
+\nocite{holland_1986, rubin_1976, manski_2003b, hernan-robins_2010}
+\bibliography{\plscassetpath/PLSC30600}
+\end{frame}
+%-------------------------------------------------------------------------------%
+\backupend
 
 \end{document}

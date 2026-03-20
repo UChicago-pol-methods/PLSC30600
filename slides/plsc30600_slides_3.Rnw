@@ -1,7 +1,14 @@
 % !Rnw weave = Sweave
 \documentclass[xcolor={dvipsnames}, handout]{beamer}
 
-\RequirePackage{../assets/pres-template_MOW}
+% Allow compilation from repo root or from /slides.
+\newcommand{\plscassetpath}{../assets}
+\IfFileExists{../assets/pres-template_MOW.sty}{}{%
+  \renewcommand{\plscassetpath}{assets}%
+}
+
+\RequirePackage{\plscassetpath/pres-template_MOW}
+\graphicspath{{./}{slides/}{assets/}{../assets/}}
 \usepackage{colortbl}
 
 %--------------------------------------------------------------------------
@@ -841,7 +848,7 @@ restricting to the observed sample ($R=1$) can induce $D$--$Y$ association.
 
 \begin{frame}[allowframebreaks]{References}
     \bibliographystyle{apalike}
-    \bibliography{../assets/PLSC30600}
+    \bibliography{\plscassetpath/PLSC30600}
 \end{frame}
 %-------------------------------------------------------------------------------%
 \backupend

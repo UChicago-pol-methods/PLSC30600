@@ -1,7 +1,14 @@
 % !Rnw weave = Sweave
 \documentclass[xcolor={dvipsnames}, handout]{beamer}
 
-\RequirePackage{../assets/pres-template_MOW}
+% Allow compilation from repo root or from /slides.
+\newcommand{\plscassetpath}{../assets}
+\IfFileExists{../assets/pres-template_MOW.sty}{}{%
+  \renewcommand{\plscassetpath}{assets}%
+}
+
+\RequirePackage{\plscassetpath/pres-template_MOW}
+\graphicspath{{./}{slides/}{assets/}{../assets/}}
 
 %--------------------------------------------------------------------------
 % Specific to this document ---------------------------------------
@@ -56,7 +63,7 @@ Link to \href{https://github.com/UChicago-pol-methods/PLSC30600}{course repo}.
 
 \begin{figure}
     \centering
-    \includegraphics[width=\textwidth]{../assets/identification.png}
+\includegraphics[width=\textwidth]{\plscassetpath/identification.png}
 \end{figure}
  
 \hfill
@@ -999,7 +1006,7 @@ Therefore,
 
 \begin{frame}[allowframebreaks]{References}
     \bibliographystyle{apalike}
-    \bibliography{../assets/PLSC30600}
+    \bibliography{\plscassetpath/PLSC30600}
 \end{frame}
 %-------------------------------------------------------------------------------%
 \backupend

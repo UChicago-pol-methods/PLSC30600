@@ -1,7 +1,14 @@
 % !Rnw weave = Sweave
-\documentclass[xcolor={dvipsnames}]{beamer}
+\documentclass[xcolor={dvipsnames},handout]{beamer}
 
-\RequirePackage{../assets/pres-template_MOW}
+% Allow compilation from repo root or from /slides.
+\newcommand{\plscassetpath}{../assets}
+\IfFileExists{../assets/pres-template_MOW.sty}{}{%
+  \renewcommand{\plscassetpath}{assets}%
+}
+
+\RequirePackage{\plscassetpath/pres-template_MOW}
+\graphicspath{{./}{slides/}{assets/}{../assets/}}
 \usepackage{colortbl}
 \usepackage{calc}
 
@@ -30,6 +37,33 @@
 <<setup, echo=FALSE, results=hide>>=
 set.seed(60637)
 library(ggplot2)
+
+cbPalette <- c(
+  "#999999", "#E69F00", "#56B4E9", "#009E73",
+  "#F0E442", "#0072B2", "#D55E00", "#CC79A7"
+)
+
+overlap_palette <- c("Control" = cbPalette[2], "Treated" = cbPalette[3])
+
+# Course-wide figure theme
+custom_theme <- theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 11, face = "bold"),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.25),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA),
+    plot.margin = margin(10, 10, 10, 10),
+    axis.ticks.length = unit(5, "pt"),
+    axis.ticks = element_line(linewidth = 0.5),
+    legend.position = "bottom",
+    legend.background = element_rect(fill = "white", color = NA),
+    strip.background = element_blank()
+  )
 @
 
 %-------------------------------------------------------------------------------%
@@ -198,20 +232,26 @@ and the analogous control term offsets bias.\pause
 \small
 \begin{overprint}
 \[
-\widehat{\E}_{DR}[\tau_i]=
+\widehat{\E}_{DR}[\tau_i]
+=
+\frac{1}{n}\sum_{i=1}^n
+\left[
 \begin{aligned}
-&\frac{1}{n}\sum_{i=1}^n
-\only<2>{\textcolor{Contrast1}}{\underbrace{\hat m_1(\X_i)-\hat m_0(\X_i)}_\text{outcome model}} +  \\
-&\quad\frac{1}{n}\sum_{i=1}^n
-\only<1-2>{\underbrace{
-\frac{D_i\left(Y_i-\only<2>{\textcolor{Contrast1}}{\hat m_1(\X_i)}\right)}{\only<3>{\textcolor{Contrast2}}{\hat p_D(\X_i)}}
--\frac{(1-D_i)\left(Y_i-\only<2>{\textcolor{Contrast1}}{\hat m_0(\X_i)}\right)}{\only<3>{\textcolor{Contrast2}}{1-\hat p_D(\X_i)}}
-}_\text{residual correction}}
-\only<3>{\textcolor{Contrast2}{\underbrace{\color{black}\left[
-\frac{D_i\left(Y_i-\only<2>{\textcolor{Contrast1}}{\hat m_1(\X_i)}\right)}{\textcolor{Contrast2}{\hat p_D(\X_i)}}
--\frac{(1-D_i)\left(Y_i-\only<2>{\textcolor{Contrast1}}{\hat m_0(\X_i)}\right)}{\textcolor{Contrast2}{1-\hat p_D(\X_i)}}
-\right]}_{\text{residual correction}}}}
+&\underbrace{
+\alt<2>{\textcolor{Contrast1}{\hat m_1(\X_i)-\hat m_0(\X_i)}}{\hat m_1(\X_i)-\hat m_0(\X_i)}
+}_{\alt<2>{\textcolor{Contrast1}{\text{outcome model}}}{\text{outcome model}}}
+\\
+&\quad +\;
+\underbrace{
+\left(
+\frac{D_i\left(Y_i-\alt<2>{\textcolor{Contrast1}{\hat m_1(\X_i)}}{\hat m_1(\X_i)}\right)}
+{\alt<3>{\textcolor{Contrast2}{\hat p_D(\X_i)}}{\hat p_D(\X_i)}}
+-\frac{(1-D_i)\left(Y_i-\alt<2>{\textcolor{Contrast1}{\hat m_0(\X_i)}}{\hat m_0(\X_i)}\right)}
+{\alt<3>{\textcolor{Contrast2}{1-\hat p_D(\X_i)}}{1-\hat p_D(\X_i)}}
+\right)
+}_{\alt<3>{\textcolor{Contrast2}{\text{residual correction}}}{\text{residual correction}}}
 \end{aligned}
+\right].
 \]
 
 \begin{overlayarea}{\textwidth}{0.25\textheight}
@@ -228,26 +268,6 @@ and the analogous control term offsets bias.\pause
 \end{overlayarea}
 \end{overprint}
 \end{frame}
-
-%-------------------------------------------------------------------------------%
-\begin{frame}[fragile]{Code: doubly robust estimator}
-\small
-<<dr-code, echo=TRUE>>=
-# Outcome models
-fit_dr <- lm(Y ~ D + X_1 + X_2, data = df)
-df$m1_hat <- predict(fit_dr, newdata = transform(df, D = 1))
-df$m0_hat <- predict(fit_dr, newdata = transform(df, D = 0))
-
-# DR estimator (uses p_hat from propensity model)
-dr_ate <- mean(
-  df$m1_hat - df$m0_hat +
-    df$D * (df$Y - df$m1_hat) / df$p_hat -
-    (1 - df$D) * (df$Y - df$m0_hat) / (1 - df$p_hat)
-)
-dr_ate
-@
-\end{frame}
-
 %-------------------------------------------------------------------------------%
 \begin{frame}{Overlap and positivity: definitions}
 \small
@@ -276,11 +296,11 @@ df_overlap <- data.frame(
 
 ggplot(df_overlap, aes(x = x, color = group, fill = group)) +
   geom_density(alpha = 0.3, linewidth = 0.8, adjust = 1.1) +
-  scale_fill_manual(values = c("#E69F00", "#56B4E9")) +
-  scale_color_manual(values = c("#E69F00", "#56B4E9")) +
+  scale_fill_manual(values = overlap_palette) +
+  scale_color_manual(values = overlap_palette) +
   labs(x = "Covariate X", y = "Density", fill = "Treatment status",
        color = "Treatment status") +
-  theme_minimal()
+  custom_theme
 @
 
 
@@ -312,9 +332,9 @@ ldw$group <- factor(ifelse(ldw$treat == 1, "Treated", "Control"),
 ggplot(ldw, aes(x = ps, fill = group)) +
   geom_histogram(aes(y = after_stat(density)),
                  position = "identity", alpha = 0.5, bins = 30) +
-  scale_fill_manual(values = c("#E69F00", "#56B4E9")) +
+  scale_fill_manual(values = overlap_palette) +
   labs(x = "Propensity score", y = "Density", fill = "Group") +
-  theme_minimal()
+  custom_theme
 @
 \end{frame}
 
@@ -329,9 +349,9 @@ ggplot(ldw, aes(x = ps, fill = group)) +
 ggplot(ldw, aes(x = ps, fill = group)) +
   geom_histogram(aes(y = after_stat(density)),
                  position = "identity", alpha = 0.5, bins = 30) +
-  scale_fill_manual(values = c("#E69F00", "#56B4E9")) +
+  scale_fill_manual(values = overlap_palette) +
   labs(x = "Propensity score", y = "Density", fill = "Group") +
-  theme_minimal()
+  custom_theme
 @
 \end{frame}
 
@@ -354,9 +374,9 @@ ldw_cps$group <- factor(ifelse(ldw_cps$treat == 1, "Treated", "Control"),
 ggplot(ldw_cps, aes(x = ps, fill = group)) +
   geom_histogram(aes(y = after_stat(density)),
                  position = "identity", alpha = 0.5, bins = 30) +
-  scale_fill_manual(values = c("#E69F00", "#56B4E9")) +
+  scale_fill_manual(values = overlap_palette) +
   labs(x = "Propensity score", y = "Density", fill = "Group") +
-  theme_minimal()
+  custom_theme
 @
 \end{frame}
 
@@ -649,7 +669,7 @@ Compare to:
 %-------------------------------------------------------------------------------%
 \begin{frame}[allowframebreaks]{References}
 \bibliographystyle{apalike}
-\bibliography{../assets/PLSC30600}
+\bibliography{\plscassetpath/PLSC30600}
 \nocite{lalonde_1986, imbens-xu_2025, dehejia-wahba_1999}
 \vspace{0.5em}
 \noindent \footnotesize Tutorial: \url{https://yiqingxu.org/tutorials/lalonde/}

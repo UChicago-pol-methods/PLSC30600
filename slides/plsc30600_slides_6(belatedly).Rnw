@@ -1,7 +1,14 @@
 % !Rnw weave = Sweave
-\documentclass[xcolor={dvipsnames}]{beamer}
+\documentclass[xcolor={dvipsnames}, handout]{beamer}
 
-\usepackage{../assets/pres-template_MOW}
+% Allow compilation from repo root or from /slides.
+\newcommand{\plscassetpath}{../assets}
+\IfFileExists{../assets/pres-template_MOW.sty}{}{%
+  \renewcommand{\plscassetpath}{assets}%
+}
+
+\RequirePackage{\plscassetpath/pres-template_MOW}
+\graphicspath{{./}{slides/}{assets/}{../assets/}}
 \usepackage{verbatim}
 
 \setkeys{Gin}{keepaspectratio}
@@ -18,6 +25,9 @@
 \date{Winter 2026}
 \author{Molly Offer-Westort}
 \institute{Department of Political Science, \\University of Chicago}
+
+\newcommand{\scienceunknown}[1]{\textcolor{red!40}{#1}}
+\newcommand{\scienceobs}[1]{\textcolor{Violator1}{#1}}
 
 
 \begin{document}
@@ -43,6 +53,33 @@ if (!dir.exists("figs51")) dir.create("figs51")
 library(ri)
 library(ggplot2)
 set.seed(60637)
+@
+
+<<plot_style, include=FALSE, echo=FALSE>>=
+cbPalette <- c(
+  "#999999", "#E69F00", "#56B4E9", "#009E73",
+  "#F0E442", "#0072B2", "#D55E00", "#CC79A7"
+)
+
+# Course-wide figure theme
+custom_theme <- theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 11, face = "bold"),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.25),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA),
+    plot.margin = margin(10, 10, 10, 10),
+    axis.ticks.length = unit(5, "pt"),
+    axis.ticks = element_line(linewidth = 0.5),
+    legend.position = "bottom",
+    legend.background = element_rect(fill = "white", color = NA),
+    strip.background = element_blank()
+  )
 @
 
 \end{frame}
@@ -99,14 +136,14 @@ as discussed in
 
 \begin{table}[]
 \begin{tabular}{lccccc}
-& $Y_i(0)$ & $Y_i(1)$ & $D_i$ & $Y_i$ & $\tau_i$ \\
-Village 1 & 10 & 15 & 1 & 15 & 5 \\
-Village 2 & 15 & 15 & 0 & 15 & 0 \\
-Village 3 & 20 & 30 & 0 & 20 & 10 \\
-Village 4 & 20 & 15 & 0 & 20 & -5 \\
-Village 5 & 10 & 20 & 0 & 10 & 10 \\
-Village 6 & 15 & 15 & 0 & 15 & 0 \\
-Village 7 & 15 & 30 & 1 & 30 & 15 \\
+& $Y_i(0)$ & $Y_i(1)$ & \scienceobs{$D_i$} & \scienceobs{$Y_i$} & $\tau_i$ \\
+Village 1 & 10 & 15 & \scienceobs{1} & \scienceobs{15} & 5 \\
+Village 2 & 15 & 15 & \scienceobs{0} & \scienceobs{15} & 0 \\
+Village 3 & 20 & 30 & \scienceobs{0} & \scienceobs{20} & 10 \\
+Village 4 & 20 & 15 & \scienceobs{0} & \scienceobs{20} & -5 \\
+Village 5 & 10 & 20 & \scienceobs{0} & \scienceobs{10} & 10 \\
+Village 6 & 15 & 15 & \scienceobs{0} & \scienceobs{15} & 0 \\
+Village 7 & 15 & 30 & \scienceobs{1} & \scienceobs{30} & 15 \\
 {\textbf{Average}} & {\textbf{15}} & {\textbf{20}} & & &{\textbf{5}}
 \end{tabular}
 \end{table}
@@ -135,14 +172,14 @@ What we actually see:
 
 \begin{table}[]
 \begin{tabular}{lccccc}
-& $Y_i(0)$ & $Y_i(1)$ & $D_i$ & $Y_i$ & $\tau_i$ \\
-Village 1 & \textcolor{red}{?} & 15 & 1 & 15 & \textcolor{red}{?} \\
-Village 2 & 15 & \textcolor{red}{?} & 0 & 15 & \textcolor{red}{?} \\
-Village 3 & 20 & \textcolor{red}{?} & 0 & 20 & \textcolor{red}{?} \\
-Village 4 & 20 & \textcolor{red}{?} & 0 & 20 & \textcolor{red}{?} \\
-Village 5 & 10 & \textcolor{red}{?} & 0 & 10 & \textcolor{red}{?} \\
-Village 6 & 15 & \textcolor{red}{?} & 0 & 15 & \textcolor{red}{?} \\
-Village 7 & \textcolor{red}{?} & 30 & 1 & 30 & \textcolor{red}{?}
+& $Y_i(0)$ & $Y_i(1)$ & \scienceobs{$D_i$} & \scienceobs{$Y_i$} & $\tau_i$ \\
+Village 1 & \scienceunknown{?} & 15 & \scienceobs{1} & \scienceobs{15} & \scienceunknown{?} \\
+Village 2 & 15 & \scienceunknown{?} & \scienceobs{0} & \scienceobs{15} & \scienceunknown{?} \\
+Village 3 & 20 & \scienceunknown{?} & \scienceobs{0} & \scienceobs{20} & \scienceunknown{?} \\
+Village 4 & 20 & \scienceunknown{?} & \scienceobs{0} & \scienceobs{20} & \scienceunknown{?} \\
+Village 5 & 10 & \scienceunknown{?} & \scienceobs{0} & \scienceobs{10} & \scienceunknown{?} \\
+Village 6 & 15 & \scienceunknown{?} & \scienceobs{0} & \scienceobs{15} & \scienceunknown{?} \\
+Village 7 & \scienceunknown{?} & 30 & \scienceobs{1} & \scienceobs{30} & \scienceunknown{?}
 \end{tabular}
 \end{table}
 \pause
@@ -176,7 +213,7 @@ $$
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{../assets/eee.jpg}
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{\plscassetpath/eee.jpg}
 \end{figure}
 
 (image cred: \@simongrund89)
@@ -271,7 +308,7 @@ Assuming all treatment effects are exactly zero is called the \textbf{sharp null
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth,height=0.7\textheight,keepaspectratio]{../assets/youngronaldfisher.jpeg}
+\includegraphics[width=\textwidth,height=0.7\textheight,keepaspectratio]{\plscassetpath/youngronaldfisher.jpeg}
 \end{figure}
 
 
@@ -340,14 +377,14 @@ Then we can fill in this table\dots
 
 \begin{table}[]
 \begin{tabular}{lccccc}
-& $Y_i(0)$ & $Y_i(1)$ & $D_i$ & $Y_i$ & $\tau_i$ \\
-Village 1 & \textcolor{red}{?} & 15 & 1 & 15 & \textcolor{red}{?} \\
-Village 2 & 15 & \textcolor{red}{?} & 0 & 15 & \textcolor{red}{?} \\
-Village 3 & 20 & \textcolor{red}{?} & 0 & 20 & \textcolor{red}{?} \\
-Village 4 & 20 & \textcolor{red}{?} & 0 & 20 & \textcolor{red}{?} \\
-Village 5 & 10 & \textcolor{red}{?} & 0 & 10 & \textcolor{red}{?} \\
-Village 6 & 15 & \textcolor{red}{?} & 0 & 15 & \textcolor{red}{?} \\
-Village 7 & \textcolor{red}{?} & 30 & 1 & 30 & \textcolor{red}{?}
+& $Y_i(0)$ & $Y_i(1)$ & \scienceobs{$D_i$} & \scienceobs{$Y_i$} & $\tau_i$ \\
+Village 1 & \scienceunknown{?} & 15 & \scienceobs{1} & \scienceobs{15} & \scienceunknown{?} \\
+Village 2 & 15 & \scienceunknown{?} & \scienceobs{0} & \scienceobs{15} & \scienceunknown{?} \\
+Village 3 & 20 & \scienceunknown{?} & \scienceobs{0} & \scienceobs{20} & \scienceunknown{?} \\
+Village 4 & 20 & \scienceunknown{?} & \scienceobs{0} & \scienceobs{20} & \scienceunknown{?} \\
+Village 5 & 10 & \scienceunknown{?} & \scienceobs{0} & \scienceobs{10} & \scienceunknown{?} \\
+Village 6 & 15 & \scienceunknown{?} & \scienceobs{0} & \scienceobs{15} & \scienceunknown{?} \\
+Village 7 & \scienceunknown{?} & 30 & \scienceobs{1} & \scienceobs{30} & \scienceunknown{?}
 \end{tabular}
 \end{table}
 
@@ -370,14 +407,14 @@ Village 7 & \textcolor{red}{?} & 30 & 1 & 30 & \textcolor{red}{?}
 
 \begin{table}[]
 \begin{tabular}{lccccc}
-& $Y_i(0)$ & $Y_i(1)$ & $D_i$ & $Y_i$ &$\tau_i$ \\
-Village 1 & \textcolor{red}{15} & 15 & 1 & 15 & \textcolor{red}{0} \\
-Village 2 & 15 & \textcolor{red}{15} & 0 & 15 & \textcolor{red}{0} \\
-Village 3 & 20 & \textcolor{red}{20} & 0 & 20 & \textcolor{red}{0} \\
-Village 4 & 20 & \textcolor{red}{20} & 0 & 20 & \textcolor{red}{0} \\
-Village 5 & 10 & \textcolor{red}{10} & 0 & 10 & \textcolor{red}{0} \\
-Village 6 & 15 & \textcolor{red}{15} & 0 & 15 & \textcolor{red}{0} \\
-Village 7 & \textcolor{red}{30} & 30 & 1 & 30 & \textcolor{red}{0}
+& $Y_i(0)$ & $Y_i(1)$ & \scienceobs{$D_i$} & \scienceobs{$Y_i$} &$\tau_i$ \\
+Village 1 & \scienceunknown{15} & 15 & \scienceobs{1} & \scienceobs{15} & \scienceunknown{0} \\
+Village 2 & 15 & \scienceunknown{15} & \scienceobs{0} & \scienceobs{15} & \scienceunknown{0} \\
+Village 3 & 20 & \scienceunknown{20} & \scienceobs{0} & \scienceobs{20} & \scienceunknown{0} \\
+Village 4 & 20 & \scienceunknown{20} & \scienceobs{0} & \scienceobs{20} & \scienceunknown{0} \\
+Village 5 & 10 & \scienceunknown{10} & \scienceobs{0} & \scienceobs{10} & \scienceunknown{0} \\
+Village 6 & 15 & \scienceunknown{15} & \scienceobs{0} & \scienceobs{15} & \scienceunknown{0} \\
+Village 7 & \scienceunknown{30} & 30 & \scienceobs{1} & \scienceobs{30} & \scienceunknown{0}
 \end{tabular}
 \end{table}
 
@@ -400,14 +437,14 @@ We can re-run the randomization, and the potential outcomes and observed $Y_i$ w
 
 \begin{table}[]
 \begin{tabular}{lccccc}
-& $Y_i(0)$ & $Y_i(1)$ & $D_i$ & $Y_i$ & $\tau_i$ \\
-Village 1 & \textcolor{red}{15} & 15 & \textcolor{blue}{0} & 15 & \textcolor{red}{0} \\
-Village 2 & 15 & \textcolor{red}{15} & \textcolor{blue}{1} & 15 &\textcolor{red}{0} \\
-Village 3 & 20 & \textcolor{red}{20} & \textcolor{blue}{0} & 20 &\textcolor{red}{0} \\
-Village 4 & 20 & \textcolor{red}{20} & \textcolor{blue}{0} & 20 &\textcolor{red}{0} \\
-Village 5 & 10 & \textcolor{red}{10} & \textcolor{blue}{0} & 10 &\textcolor{red}{0} \\
-Village 6 & 15 & \textcolor{red}{15} & \textcolor{blue}{1} & 15 &\textcolor{red}{0} \\
-Village 7 & \textcolor{red}{30} & 30 & \textcolor{blue}{0} & 30 &\textcolor{red}{0}
+& $Y_i(0)$ & $Y_i(1)$ & \scienceobs{$D_i$} & \scienceobs{$Y_i$} & $\tau_i$ \\
+Village 1 & \scienceunknown{15} & 15 & \scienceobs{0} & \scienceobs{15} & \scienceunknown{0} \\
+Village 2 & 15 & \scienceunknown{15} & \scienceobs{1} & \scienceobs{15} &\scienceunknown{0} \\
+Village 3 & 20 & \scienceunknown{20} & \scienceobs{0} & \scienceobs{20} &\scienceunknown{0} \\
+Village 4 & 20 & \scienceunknown{20} & \scienceobs{0} & \scienceobs{20} &\scienceunknown{0} \\
+Village 5 & 10 & \scienceunknown{10} & \scienceobs{0} & \scienceobs{10} &\scienceunknown{0} \\
+Village 6 & 15 & \scienceunknown{15} & \scienceobs{1} & \scienceobs{15} &\scienceunknown{0} \\
+Village 7 & \scienceunknown{30} & 30 & \scienceobs{0} & \scienceobs{30} &\scienceunknown{0}
 \end{tabular}
 \end{table}
 \pause
@@ -416,7 +453,7 @@ $$
 $$
 \pause
 $$
-\color{blue}{\hat{\tau} = 15-19 = \bm{-4}}
+\textcolor{Violator1}{\hat{\tau} = 15-19 = \bm{-4}}
 $$
 
 \end{frame}
@@ -438,14 +475,14 @@ We can re-run the randomization, and the potential outcomes and observed $Y_i$ w
 
 \begin{table}[]
 \begin{tabular}{lccccc}
-& $Y_i(0)$ & $Y_i(1)$ & $D_i$ & $Y_i$ & $\tau_i$ \\
-Village 1 & \textcolor{red}{15} & 15 & \textcolor{blue}{0} & 15 & \textcolor{red}{0} \\
-Village 2 & 15 & \textcolor{red}{15} & \textcolor{blue}{0} & 15 &\textcolor{red}{0} \\
-Village 3 & 20 & \textcolor{red}{20} & \textcolor{blue}{1} & 20 &\textcolor{red}{0} \\
-Village 4 & 20 & \textcolor{red}{20} & \textcolor{blue}{1} & 20 &\textcolor{red}{0} \\
-Village 5 & 10 & \textcolor{red}{10} & \textcolor{blue}{0} & 10 &\textcolor{red}{0} \\
-Village 6 & 15 & \textcolor{red}{15} & \textcolor{blue}{0} & 15 &\textcolor{red}{0} \\
-Village 7 & \textcolor{red}{30} & 30 & \textcolor{blue}{0} & 30 &\textcolor{red}{0}
+& $Y_i(0)$ & $Y_i(1)$ & \scienceobs{$D_i$} & \scienceobs{$Y_i$} & $\tau_i$ \\
+Village 1 & \scienceunknown{15} & 15 & \scienceobs{0} & \scienceobs{15} & \scienceunknown{0} \\
+Village 2 & 15 & \scienceunknown{15} & \scienceobs{0} & \scienceobs{15} &\scienceunknown{0} \\
+Village 3 & 20 & \scienceunknown{20} & \scienceobs{1} & \scienceobs{20} &\scienceunknown{0} \\
+Village 4 & 20 & \scienceunknown{20} & \scienceobs{1} & \scienceobs{20} &\scienceunknown{0} \\
+Village 5 & 10 & \scienceunknown{10} & \scienceobs{0} & \scienceobs{10} &\scienceunknown{0} \\
+Village 6 & 15 & \scienceunknown{15} & \scienceobs{0} & \scienceobs{15} &\scienceunknown{0} \\
+Village 7 & \scienceunknown{30} & 30 & \scienceobs{0} & \scienceobs{30} &\scienceunknown{0}
 \end{tabular}
 \end{table}
 \pause
@@ -454,7 +491,7 @@ $$
 $$
 \pause
 $$
-\color{blue}{\hat{\tau} = 20-17= \bm{3}}
+\textcolor{Violator1}{\hat{\tau} = 20-17= \bm{3}}
 $$
 
 \end{frame}
@@ -476,14 +513,14 @@ We can re-run the randomization, and the potential outcomes and observed $Y_i$ w
 
 \begin{table}[]
 \begin{tabular}{lccccc}
-& $Y_i(0)$ & $Y_i(1)$ & $D_i$ & $Y_i$ & $\tau_i$ \\
-Village 1 & \textcolor{red}{15} & 15 & \textcolor{blue}{0} & 15 & \textcolor{red}{0} \\
-Village 2 & 15 & \textcolor{red}{15} & \textcolor{blue}{0} & 15 &\textcolor{red}{0} \\
-Village 3 & 20 & \textcolor{red}{20} & \textcolor{blue}{1} & 20 &\textcolor{red}{0} \\
-Village 4 & 20 & \textcolor{red}{20} & \textcolor{blue}{0} & 20 &\textcolor{red}{0} \\
-Village 5 & 10 & \textcolor{red}{10} & \textcolor{blue}{0} & 10 &\textcolor{red}{0} \\
-Village 6 & 15 & \textcolor{red}{15} & \textcolor{blue}{0} & 15 &\textcolor{red}{0} \\
-Village 7 & \textcolor{red}{30} & 30 & \textcolor{blue}{1} & 30 &\textcolor{red}{0}
+& $Y_i(0)$ & $Y_i(1)$ & \scienceobs{$D_i$} & \scienceobs{$Y_i$} & $\tau_i$ \\
+Village 1 & \scienceunknown{15} & 15 & \scienceobs{0} & \scienceobs{15} & \scienceunknown{0} \\
+Village 2 & 15 & \scienceunknown{15} & \scienceobs{0} & \scienceobs{15} &\scienceunknown{0} \\
+Village 3 & 20 & \scienceunknown{20} & \scienceobs{1} & \scienceobs{20} &\scienceunknown{0} \\
+Village 4 & 20 & \scienceunknown{20} & \scienceobs{0} & \scienceobs{20} &\scienceunknown{0} \\
+Village 5 & 10 & \scienceunknown{10} & \scienceobs{0} & \scienceobs{10} &\scienceunknown{0} \\
+Village 6 & 15 & \scienceunknown{15} & \scienceobs{0} & \scienceobs{15} &\scienceunknown{0} \\
+Village 7 & \scienceunknown{30} & 30 & \scienceobs{1} & \scienceobs{30} &\scienceunknown{0}
 \end{tabular}
 \end{table}
 \pause
@@ -492,7 +529,7 @@ $$
 $$
 \pause
 $$
-\color{blue}{\hat{\tau} = 25-15 = \bm{10}}
+\textcolor{Violator1}{\hat{\tau} = 25-15 = \bm{10}}
 $$
 
 \end{frame}
@@ -710,12 +747,16 @@ mean(dm)
 gg_bins <- aggregate(list(rf = dm), by = list(dm = dm), length)
 gg_bins$col <- abs(gg_bins$dm) >= abs(dm_hat)
 
-ggplot(gg_bins, aes(x = dm, y = rf)) +
-        geom_col() +
-        geom_vline(xintercept = 0, color = 'red') +
-        xlab('Difference in means estimates') + 
-        ylab('Frequency') +
-        ggtitle('Distribution of difference in means estimates under\nthe sharp null')
+ggplot(gg_bins, aes(x = dm, y = rf, fill = col)) +
+  geom_col(show.legend = FALSE) +
+  geom_vline(xintercept = 0, color = cbPalette[3]) +
+  scale_fill_manual(values = c("FALSE" = "grey80", "TRUE" = cbPalette[2])) +
+  labs(
+    x = "Difference in means estimates",
+    y = "Frequency",
+    title = "Distribution of difference in means estimates under\nthe sharp null"
+  ) +
+  custom_theme
 @
 \end{center}
 
@@ -1098,12 +1139,13 @@ dist_df
 dist_df$tail <- dist_df$T >= T_obs
 ggplot(dist_df, aes(x = factor(T), y = prob, fill = tail)) +
   geom_col() +
-  scale_fill_manual(values = c("grey35", "#619CFF")) +
+  scale_fill_manual(values = c("FALSE" = "grey80", "TRUE" = cbPalette[2])) +
   labs(
     title = "Lady tasting tea: exact randomization distribution under the sharp null",
     x = "T = # correct (out of 4)",
     y = "Probability"
   ) +
+  custom_theme +
   theme(legend.position = "none")
 @
 \end{center}
@@ -1120,7 +1162,7 @@ p = \Pr[T \ge T_{\text{obs}}] = \Sexpr{round(p_ge_Tobs, 4)}.
 \pause
 \begin{itemize}
 \item This p-value is computed by \textbf{counting assignments} consistent with results at least as good as what we saw. \pause
-\item It is \textbf{not} \(P(H_0 \mid \text{data})\) (Fisher rejects ``inverse probability'' as the general justification for scientific conclusions).
+\item It is \textbf{not} \(\Pr[H_0 \mid \text{data}]\) (Fisher rejects ``inverse probability'' as the general justification for scientific conclusions).
 \end{itemize}
 
 \end{frame}
@@ -1131,82 +1173,9 @@ p = \Pr[T \ge T_{\text{obs}}] = \Sexpr{round(p_ge_Tobs, 4)}.
 
 \begin{frame}[allowframebreaks]{References}
 \bibliographystyle{apalike}
-\bibliography{../assets/PLSC30600}
+\bibliography{\plscassetpath/PLSC30600}
 \end{frame}
 %-------------------------------------------------------------------------------%
 
 \backupend
 \end{document}
-%
-\\~\
-%-------------------------------------------------------------------------------%
-%%% [[TEMPLATEs]] %%%
-%-------------------------------------------------------------------------------%
-\begin{frame}[fragile]{Frametitle}
-
-\begin{center}
-<<fig = TRUE, fig.width = 5, fig.height =5, echo=FALSE, out.width='0.9\\textwidth'>>=
-hist(rnorm(10))
-@
-\end{center}
-
-\end{frame}
-
-
-%%%%%NOTE%%%%%
-\note{
-\scriptsize \singlespacing
-
-\begin{itemize}
-\item xxxx
-\end{itemize}
-\\~\
-}
-
-%-------------------------------------------------------------------------------%
-\begin{frame}{Frametile}
-
-\begin{figure}
-\centering
-\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{...}
-\end{figure}
-
-\end{frame}
-
-
-%%%%%NOTE%%%%%
-\note{
-\scriptsize \singlespacing
-
-\begin{itemize}
-\item xxxx
-\end{itemize}
-
-}
-
-%-------------------------------------------------------------------------------%
-\begin{frame}{Frametitle}
-
-\begin{itemize}
-\item xxx
-\end{itemize}
-
-\end{frame}
-
-
-%%%%%NOTE%%%%%
-\note{
-\scriptsize \singlespacing
-
-\begin{itemize}
-\item xxxx
-\end{itemize}
-\\~\
-}
-
-%-------------------------------------------------------------------------------%
-% <<echo = FALSE>>=
-% f <- 'slides_51.Rnw'
-% knitr::purl(f)
-% knitr::Sweave2knitr(f)
-% @

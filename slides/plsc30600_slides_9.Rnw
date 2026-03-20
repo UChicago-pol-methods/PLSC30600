@@ -1,10 +1,17 @@
 % !Rnw weave = Sweave
 \documentclass[xcolor={dvipsnames}, handout]{beamer}
 
-\RequirePackage{../assets/pres-template_MOW}
+% Allow compilation from repo root or from /slides.
+\newcommand{\plscassetpath}{../assets}
+\IfFileExists{../assets/pres-template_MOW.sty}{}{%
+  \renewcommand{\plscassetpath}{assets}%
+}
+
+\RequirePackage{\plscassetpath/pres-template_MOW}
 \usepackage{verbatim}
 
 \setkeys{Gin}{keepaspectratio}
+\graphicspath{{./}{slides/}{assets/}{../assets/}}
 
 %--------------------------------------------------------------------------
 % Specific to this document -----------------------------------------------
@@ -20,7 +27,9 @@
 \institute{Department of Political Science, \\University of Chicago}
 
 \begin{document}
-\SweaveOpts{concordance=TRUE}
+% Concordance files make root-level pdflatex runs brittle because Sweave emits
+% a bare \input{...-concordance} path.
+\SweaveOpts{concordance=FALSE}
 
 <<setup, echo=FALSE, results=hide>>=
 set.seed(30600)
@@ -37,6 +46,7 @@ cbPalette <- c(
   "#F0E442", "#0072B2", "#D55E00", "#CC79A7"
 )
 
+# Course-wide figure theme
 custom_theme <- theme_minimal(base_size = 12) +
   theme(
     plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
@@ -48,11 +58,12 @@ custom_theme <- theme_minimal(base_size = 12) +
     panel.grid.minor = element_blank(),
     panel.background = element_rect(fill = "white", color = NA),
     plot.background = element_rect(fill = "white", color = NA),
-    plot.margin = margin(t = 14, r = 14, b = 14, l = 14),
+    plot.margin = margin(10, 10, 10, 10),
     axis.ticks.length = unit(5, "pt"),
     axis.ticks = element_line(linewidth = 0.5),
     legend.position = "bottom",
-    legend.background = element_rect(fill = "white", color = NA)
+    legend.background = element_rect(fill = "white", color = NA),
+    strip.background = element_blank()
   )
 
 ev_palette <- c("Study (S=1)" = cbPalette[3], "Target (S=0)" = cbPalette[2])
@@ -499,7 +510,7 @@ Restrict the CPS target to units with \(\hat e_S(X)\ge \Sexpr{th_overlap}\), i.e
 \end{frame}
 
 %-------------------------------------------------------------------------------%
-\begin{frame}{Tipton: the \"two bridges\" (statistical + substantive)}
+\begin{frame}{Tipton: the two bridges (statistical + substantive)}
 \small
 \begin{wideitemize}
 \item \textbf{Statistical bridge:} make \(S=1\) look like \(S=0\) on moderators \(X\) (weighting/stratification).\pause
@@ -704,7 +715,7 @@ ggplot(df_bal, aes(x = smd, y = var, color = which)) +
 \nocite{deaton-cartwright_2018}
 \nocite{tipton_2013}
 \nocite{pearl-bareinboim_2014}
-\bibliography{../assets/PLSC30600}
+\bibliography{\plscassetpath/PLSC30600}
 \end{frame}
 
 %-------------------------------------------------------------------------------%

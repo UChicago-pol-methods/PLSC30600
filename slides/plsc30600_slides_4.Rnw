@@ -1,7 +1,14 @@
 % !Rnw weave = Sweave
 \documentclass[xcolor={dvipsnames}, handout]{beamer}
 
-\RequirePackage{../assets/pres-template_MOW}
+% Allow compilation from repo root or from /slides.
+\newcommand{\plscassetpath}{../assets}
+\IfFileExists{../assets/pres-template_MOW.sty}{}{%
+  \renewcommand{\plscassetpath}{assets}%
+}
+
+\RequirePackage{\plscassetpath/pres-template_MOW}
+\graphicspath{{./}{slides/}{assets/}{../assets/}}
 \usepackage{colortbl}
 \usepackage{calc} % enables \rowbase + #1\rowscale arithmetic
 
@@ -48,7 +55,7 @@ set.seed(60637)
 \setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.15}
 \begin{tabular}{c|c|c|c|c|c|c|c}
-$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $p_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $p_D(\X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
 \cmidrule(lr){1-1}\cmidrule(lr){2-6}\cmidrule(lr){7-8}
 1 & A & 0 & \textcolor{red!40}{?} & 0 & \textcolor{red!40}{?} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
 2 & A & 0 & \textcolor{red!40}{?} & \textcolor{red!40}{?} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
@@ -69,7 +76,7 @@ $i$ & $X_{[1]i}$ & $X_{[2]i}$ & $p_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Vi
 \begin{frame}{Probit MLE: notation and log-likelihood \scriptsize \hfill (\citealt[Section 5.2.5]{aronow-miller_2019})}
 \small
 \begin{wideitemize}
-\item Data: $(Y_i, D_i, \X_i)$ i.i.d. observations of $(Y, D, \X)$, $D_i \in \{0,1\}$, \(X_i\in\mathbb{R}^{K+1}\) includes intercept. \pause 
+\item Data: $(Y_i, D_i, \X_i)$ i.i.d. observations of $(Y, D, \X)$, $D_i \in \{0,1\}$, \(\X_i\in\mathbb{R}^{K+1}\) includes intercept. \pause 
 \item We want to predict $D$. Stack outcomes and regressors:
 \[
 \D=
@@ -109,9 +116,9 @@ and
 \begin{frame}{Probit MLE: notation and log-likelihood}
 \small
 \begin{wideitemize}
-\item $D_i$ is binary, so conditional on \(X_i\), \(D_i \sim \mathrm{Bernoulli}(p_i)\), so the likelihood is
+\item $D_i$ is binary, so conditional on \(\X_i\), \(D_i \sim \mathrm{Bernoulli}(p_i)\), so the likelihood is
 \[
-\ll(\bB \mid \D, X)
+\ll(\bB \mid \D, \XX)
 = \prod_{i=1}^n p_i^{D_i}(1-p_i)^{1-D_i}.
 \]
 \vspace{-3em}\pause
@@ -228,7 +235,7 @@ max(abs(df$p_hat - df$p_hat_glm))
 \setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.15}
 \begin{tabular}{c|c|c|c|c|c|c|c}
-$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $\hat p_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
+$i$ & $X_{[1]i}$ & $X_{[2]i}$ & $\hat p_D(\X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcolor{Violator1}{$D_i$} & \textcolor{Violator1}{$Y_i$} \\
 \cmidrule(lr){1-1}\cmidrule(lr){2-6}\cmidrule(lr){7-8}
 1 & A & 0 & \cellcolor{Contrast2l}0.33 & 0 & \textcolor{Contrast2l}{\textit{(donor)}} & \textcolor{Violator1}{0} & \textcolor{Violator1}{0} \\
 2 & A & 0 & \cellcolor{Contrast2l}0.33 & \textcolor{Contrast2l}{\textit{(donor)}} & 1 & \textcolor{Violator1}{1} & \textcolor{Violator1}{1} \\
@@ -245,7 +252,7 @@ $i$ & $X_{[1]i}$ & $X_{[2]i}$ & $\hat p_D(X_i)$ & $Y_i(0)$ & $Y_i(1)$ & \textcol
 
 \vspace{0.2cm}
 \begin{wideitemize}
-\item For each missing potential outcome, choose a nearest-neighbor donor in $p_D(X)$ from the opposite treatment arm.
+\item For each missing potential outcome, choose a nearest-neighbor donor in $p_D(\X)$ from the opposite treatment arm.
 \item Impute $\widehat{Y}_i(0)$ or $\widehat{Y}_i(1)$ with that donor's observed outcome.
 \end{wideitemize}
 \end{frame}
@@ -318,7 +325,7 @@ mean(df$Y1_imp - df$Y0_imp)
 \begin{table}[h]
 \centering
 \begin{tabular}{c c c c c c}
-$X_{[1]}$ & $X_{[2]}$ & $n$ & $\hat p_D(X)$ &
+$X_{[1]}$ & $X_{[2]}$ & $n$ & $\hat p_D(\X)$ &
 $n_1$ (treated) & $n_0$ (control) \\
 \cmidrule(lr){1-1}\cmidrule(lr){2-6}
 A & 0 & \nstrut{3}3 & \cellcolor{Contrast2l}0.33 & 1 & 2 \\
@@ -334,7 +341,7 @@ B & 1 & \nstrut{3}3 & \cellcolor{Contrast4l}0.67 & 2 & 1 \\
 \begin{table}[h]
 \centering
 \begin{tabular}{c c c c c c}
-$X_{[1]}$ & $X_{[2]}$ & $n$ & $\hat p_D(X)$ &
+$X_{[1]}$ & $X_{[2]}$ & $n$ & $\hat p_D(\X)$ &
 $\sum_{i: D_i=1}\frac{1}{\hat p_D(\X_i)}$ &
 $\sum_{i: D_i=0}\frac{1}{1-\hat p_D(\X_i)}$ \\
 \cmidrule(lr){1-1}\cmidrule(lr){2-6}
@@ -515,7 +522,7 @@ fit_lin$coefficients['D']
 %-------------------------------------------------------------------------------%
 \begin{frame}[allowframebreaks]{References}
 \bibliographystyle{apalike}
-\bibliography{../assets/PLSC30600}
+\bibliography{\plscassetpath/PLSC30600}
 \end{frame}
 %-------------------------------------------------------------------------------%
 \backupend

@@ -1,10 +1,17 @@
 % !Rnw weave = Sweave
 \documentclass[xcolor={dvipsnames}, handout]{beamer}
 
-\RequirePackage{../assets/pres-template_MOW}
+% Allow compilation from repo root or from /slides.
+\newcommand{\plscassetpath}{../assets}
+\IfFileExists{../assets/pres-template_MOW.sty}{}{%
+  \renewcommand{\plscassetpath}{assets}%
+}
+
+\RequirePackage{\plscassetpath/pres-template_MOW}
 \usepackage{verbatim}
 
 \setkeys{Gin}{keepaspectratio}
+\graphicspath{{./}{slides/}{assets/}{../assets/}}
 
 %--------------------------------------------------------------------------
 % Specific to this document -----------------------------------------------
@@ -43,7 +50,7 @@ set.seed(60637)
 %-------------------------------------------------------------------------------%
 \begin{frame}{Why instrumental variables?}
 
-In many settings, treatment \textcolor{cyan}{receipt} \(D_i\) is not randomized.\pause
+In many settings, treatment \textcolor{Maroon}{receipt} \(D_i\) is not randomized.\pause
 
 \begin{itemize}
 \item Some units select into/out of treatment based on unobservables.\pause
@@ -716,7 +723,7 @@ Imbens--Angrist (1994) show: with multi-valued \(Z\), under monotonicity plus an
 \bibliographystyle{apalike}
 \nocite{imbens-angrist_1994, angrist-et-al_1996, staiger-stock_1997}
 \nocite{imbens-lemieux_2008, mccrary_2008, lee_2008, cattaneo-et-al_2019}
-\bibliography{../assets/PLSC30600}
+\bibliography{\plscassetpath/PLSC30600}
 \end{frame}
 %-------------------------------------------------------------------------------%
 

@@ -1,10 +1,17 @@
 % !Rnw weave = Sweave
 \documentclass[xcolor={dvipsnames}, handout]{beamer}
 
-\RequirePackage{../assets/pres-template_MOW}
+% Allow compilation from repo root or from /slides.
+\newcommand{\plscassetpath}{../assets}
+\IfFileExists{../assets/pres-template_MOW.sty}{}{%
+  \renewcommand{\plscassetpath}{assets}%
+}
+
+\RequirePackage{\plscassetpath/pres-template_MOW}
 \usepackage{verbatim}
 
 \setkeys{Gin}{keepaspectratio}
+\graphicspath{{./}{slides/}{assets/}{../assets/}}
 
 %--------------------------------------------------------------------------
 % Specific to this document -----------------------------------------------
@@ -24,6 +31,32 @@
 
 <<setup, echo=FALSE, results=hide>>=
 set.seed(30600)
+suppressPackageStartupMessages(library(ggplot2))
+
+cbPalette <- c(
+  "#999999", "#E69F00", "#56B4E9", "#009E73",
+  "#F0E442", "#0072B2", "#D55E00", "#CC79A7"
+)
+
+# Course-wide figure theme
+custom_theme <- theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 11, face = "bold"),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.25),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA),
+    plot.margin = margin(10, 10, 10, 10),
+    axis.ticks.length = unit(5, "pt"),
+    axis.ticks = element_line(linewidth = 0.5),
+    legend.position = "bottom",
+    legend.background = element_rect(fill = "white", color = NA),
+    strip.background = element_blank()
+  )
 
 rd_make_toy <- function(n = 2500, x_min = -2, x_max = 2, c = 0, tau = 1) {
   X <- runif(n, x_min, x_max)
@@ -258,8 +291,8 @@ The (conditional) average treatment effect at a point \(x^\star\) is
   m1 <- function(x) m0(x) + tau_x(x)
 
   df <- rbind(
-    data.frame(x = x, y = m0(x), curve = "m0(x) = E[Y(0) | X=x]"),
-    data.frame(x = x, y = m1(x), curve = "m1(x) = E[Y(1) | X=x]")
+    data.frame(x = x, y = m0(x), curve = "m0(x)"),
+    data.frame(x = x, y = m1(x), curve = "m1(x)")
   )
 
   df_tau <- data.frame(
@@ -287,14 +320,15 @@ The (conditional) average treatment effect at a point \(x^\star\) is
       size = 3.6
     ) +
     labs(x = "Covariate X", y = NULL) +
-    theme_classic(base_size = 12) +
+    custom_theme +
     theme(
-      strip.background = element_blank(),
       strip.text.y = element_text(angle = 0, hjust = 0),
       plot.margin = margin(4, 4, 4, 4)
     ) + 
-    scale_color_manual(values = c("m0(x) = E[Y(0) | X=x]" = "steelblue", 
-                                  "m1(x) = E[Y(1) | X=x]" = "firebrick"))
+    scale_color_manual(values = c(
+      "m0(x)" = cbPalette[6],
+      "m1(x)" = cbPalette[7]
+    ))
 
 @
 \end{frame}
@@ -381,9 +415,8 @@ In SRD, the treatment probability jumps from 0 to 1 at the cutoff, so the observ
     scale_linetype_manual(values = c(Potential = "22", Observed = "solid")) +
     labs(x = "Forcing variable X", y = NULL) +
     guides(linetype = guide_legend(title = NULL)) +
-    theme_classic(base_size = 12) +
+    custom_theme +
     theme(
-      strip.background = element_blank(),
       strip.text.y = element_text(angle = 0, hjust = 0),
       legend.position = "bottom",
       panel.spacing = grid::unit(0.7, "lines")
@@ -434,12 +467,11 @@ Often there is a cutoff-based \textbf{eligibility rule} but \textbf{treatment re
 	    facet_grid(panel ~ ., scales = "free_y") +
 	    scale_y_continuous(limits = c(-0.12, 1.12), breaks = c(0, 0.5, 1)) +
 	    labs(x = "Forcing variable X", y = NULL) +
-	    theme_classic(base_size = 12) +
+	    custom_theme +
 	    theme(
-	      strip.background = element_blank(),
-      strip.text.y = element_text(angle = 0, hjust = 0),
-      panel.spacing = grid::unit(0.7, "lines")
-    )
+	      strip.text.y = element_text(angle = 0, hjust = 0),
+	      panel.spacing = grid::unit(0.7, "lines")
+	    )
 @
 \end{frame}
 
@@ -500,7 +532,7 @@ Before smoothing or binning, the data are noisy: you cannot read the jump off of
     geom_point(alpha = 0.25, size = 1) +
     scale_color_manual(values = c("0" = "gray40", "1" = "gray40")) +
     labs(x = "Forcing variable X", y = "Outcome Y") +
-    theme_classic(base_size = 12) +
+    custom_theme +
     theme(legend.position = "none")
 @
 \end{frame}
@@ -530,16 +562,16 @@ df_bins <- rbind(
 suppressPackageStartupMessages(library(ggplot2))
 
 ggplot(df_bins, aes(x = x, y = y)) +
-  geom_vline(xintercept = 0, linewidth = 0.6, color = "firebrick") +
+  geom_vline(xintercept = 0, linewidth = 0.6, color = cbPalette[7]) +
   geom_point(size = 1.5, alpha = 0.8, color = "gray35") +
-  annotate("text", x = 0.05, y = max(df_bins$y), label = "cutoff c", hjust = 0, vjust = 1, color = "firebrick", size = 3.4) +
+  annotate("text", x = 0.05, y = max(df_bins$y), label = "cutoff c", hjust = 0, vjust = 1, color = cbPalette[7], size = 3.4) +
   coord_cartesian(xlim = c(-2, 2)) +
   labs(
     x = "Forcing variable X",
     y = "Mean outcome in bin",
     title = "Binned means (no smoothing across the cutoff)"
   ) +
-  theme_classic(base_size = 12) +
+  custom_theme +
   theme(plot.title = element_text(size = 11))
 @
 \end{frame}
@@ -587,9 +619,9 @@ y_note <- max(c(df_bins$y, df_fit$y))
 suppressPackageStartupMessages(library(ggplot2))
 
 ggplot() +
-  geom_vline(xintercept = 0, linewidth = 0.6, color = "firebrick") +
+  geom_vline(xintercept = 0, linewidth = 0.6, color = cbPalette[7]) +
   geom_point(data = df_bins, aes(x = x, y = y), size = 1.4, alpha = 0.75, color = "gray45") +
-  geom_line(data = df_fit, aes(x = x, y = y), linewidth = 1.1, color = "navy") +
+  geom_line(data = df_fit, aes(x = x, y = y), linewidth = 1.1, color = cbPalette[6]) +
   annotate("text", x = -1.95, y = y_note, label = note, hjust = 0, vjust = 1, size = 3.3) +
   coord_cartesian(xlim = c(-2, 2)) +
   labs(
@@ -597,7 +629,7 @@ ggplot() +
     y = "Mean Y in bin",
     title = sprintf("Local linear (uniform kernel), bandwidth h = %.2f", h)
   ) +
-  theme_classic(base_size = 12) +
+  custom_theme +
   theme(plot.title = element_text(size = 11))
 @
 \end{frame}
@@ -619,16 +651,16 @@ df_bw <- data.frame(h = hs, tau_hat = as.numeric(ests))
 suppressPackageStartupMessages(library(ggplot2))
 
 ggplot(df_bw, aes(x = h, y = tau_hat)) +
-  geom_hline(yintercept = true_tau_at_c, linewidth = 0.7, linetype = "22", color = "firebrick") +
+  geom_hline(yintercept = true_tau_at_c, linewidth = 0.7, linetype = "22", color = cbPalette[7]) +
   geom_line(linewidth = 0.9, color = "gray20") +
   geom_point(size = 2.0, color = "gray20") +
-  annotate("text", x = max(df_bw$h), y = true_tau_at_c, label = "true tau=1", vjust = -0.8, hjust = 1, color = "firebrick", size = 3.4) +
+  annotate("text", x = max(df_bw$h), y = true_tau_at_c, label = "true tau=1", vjust = -0.8, hjust = 1, color = cbPalette[7], size = 3.4) +
   labs(
     x = "Bandwidth h",
     y = "Estimated jump tau_hat(h)",
     title = "Sensitivity of the RD estimate to bandwidth choice"
   ) +
-  theme_classic(base_size = 12) +
+  custom_theme +
   theme(plot.title = element_text(size = 11))
 @
 \end{frame}
@@ -664,7 +696,7 @@ toy_hist <- transform(toy, panel = "Density of X (toy)")
 suppressPackageStartupMessages(library(ggplot2))
 
 ggplot() +
-  geom_vline(xintercept = 0, linewidth = 0.6, color = "firebrick") +
+  geom_vline(xintercept = 0, linewidth = 0.6, color = cbPalette[7]) +
   geom_histogram(
     data = toy_hist,
     aes(x = X),
@@ -682,9 +714,8 @@ ggplot() +
   facet_grid(panel ~ ., scales = "free_y") +
   coord_cartesian(xlim = c(-2, 2)) +
   labs(x = "X", y = NULL) +
-  theme_classic(base_size = 12) +
+  custom_theme +
   theme(
-    strip.background = element_blank(),
     strip.text.y = element_text(angle = 0, hjust = 0),
     panel.spacing = grid::unit(0.7, "lines")
   )
@@ -766,9 +797,8 @@ In FRD, it is helpful to plot the reduced-form jump in \(Y\) \emph{and} the firs
     geom_point(size = 1.2, alpha = 0.7, color = "gray30") +
     facet_grid(panel ~ ., scales = "free_y") +
     labs(x = "Forcing variable X (cutoff at 0)", y = NULL) +
-    theme_classic(base_size = 12) +
+    custom_theme +
     theme(
-      strip.background = element_blank(),
       strip.text.y = element_text(angle = 0, hjust = 0),
       panel.spacing = grid::unit(0.7, "lines")
     )
@@ -906,10 +936,10 @@ Raw panel data are noisy; DiD is about \emph{average} changes (thick lines show 
       aes(x = t_rel, y = Y, color = group, group = group),
       linewidth = 1.2
     ) +
-    scale_color_manual(values = c(control = "gray20", treated = "firebrick")) +
+    scale_color_manual(values = c(control = "gray20", treated = cbPalette[7])) +
     scale_x_continuous(breaks = sort(unique(did_toy_plot$t_rel))) +
     labs(x = "Time (0 = pre, 1 = post)", y = "Outcome Y") +
-    theme_classic(base_size = 12) +
+    custom_theme +
     theme(legend.position = "bottom", legend.title = element_blank())
 @
 \end{frame}
@@ -1283,16 +1313,15 @@ With staggered adoption, different cohorts start treatment in different periods.
     geom_vline(xintercept = g_vals, linewidth = 0.4, linetype = "22", color = "gray35") +
     facet_grid(group ~ ., scales = "free_y", space = "free_y") +
     scale_fill_manual(
-      values = c("0" = "gray90", "1" = "firebrick"),
+      values = c("0" = "gray90", "1" = cbPalette[7]),
       breaks = c("0", "1"),
       labels = c("Untreated", "Treated"),
       name = "D_it"
     ) +
     scale_x_continuous(breaks = sort(unique(df_vis$t))) +
     labs(x = "Time t", y = "Units (sample)") +
-    theme_classic(base_size = 12) +
+    custom_theme +
     theme(
-      strip.background = element_blank(),
       strip.text.y = element_text(angle = 0, hjust = 0),
       axis.text.y = element_blank(),
       axis.ticks.y = element_blank(),
@@ -1348,7 +1377,7 @@ Three cohorts: never treated (U), early treated at \(k\), late treated at \(l\).
   y_ann <- min(df$y) - 3
 
   ggplot() +
-    geom_vline(xintercept = c(k, l), linewidth = 0.6, color = "firebrick") +
+    geom_vline(xintercept = c(k, l), linewidth = 0.6, color = cbPalette[7]) +
     geom_line(
       data = df_line[df_line$group == "U", ],
       aes(x = t, y = y),
@@ -1408,7 +1437,7 @@ Three cohorts: never treated (U), early treated at \(k\), late treated at \(l\).
     ) +
     scale_y_continuous(limits = c(0, max(df$y) + 3)) +
     labs(x = "Time", y = "Units of Y") +
-    theme_classic(base_size = 12)
+    custom_theme
 @
 \end{frame}
 
@@ -1491,7 +1520,7 @@ TWFE effectively combines multiple 2x2 DiD comparisons --- including comparisons
     geom_col(width = 0.75) +
     coord_flip() +
     scale_fill_manual(
-      values = c(clean = "gray70", not_yet = "steelblue3", already_treated = "firebrick"),
+      values = c(clean = "gray70", not_yet = cbPalette[6], already_treated = cbPalette[7]),
       breaks = c("clean", "not_yet", "already_treated"),
       labels = c("Clean control", "Not-yet-treated control", "Already-treated control"),
       name = "Comparison type"
@@ -1501,7 +1530,7 @@ TWFE effectively combines multiple 2x2 DiD comparisons --- including comparisons
       y = "2x2 DiD estimate",
       title = "Different 2x2 comparisons can differ; TWFE (dashed) averages them implicitly"
     ) +
-    theme_classic(base_size = 12) +
+    custom_theme +
     theme(legend.position = "bottom")
 @
 \end{frame}
@@ -1556,16 +1585,16 @@ In a simple staggered-adoption toy model with heterogeneous effects, TWFE can di
 
   ggplot(df_plot, aes(x = k)) +
     geom_hline(yintercept = tau_twfe, linewidth = 0.8, linetype = 3, color = "gray30") +
-    geom_line(aes(y = true_tau), linewidth = 1.0, color = "firebrick") +
-    geom_point(aes(y = true_tau), size = 1.7, color = "firebrick") +
-    geom_line(aes(y = att), linewidth = 1.0, color = "navy") +
-    geom_point(aes(y = att), size = 1.7, color = "navy") +
+    geom_line(aes(y = true_tau), linewidth = 1.0, color = cbPalette[7]) +
+    geom_point(aes(y = true_tau), size = 1.7, color = cbPalette[7]) +
+    geom_line(aes(y = att), linewidth = 1.0, color = cbPalette[6]) +
+    geom_point(aes(y = att), size = 1.7, color = cbPalette[6]) +
     labs(
       x = "Event time k",
       y = "Effect",
       title = "Event-time effects: true (red) vs CS-style ATT aggregation (blue), TWFE (dashed)"
     ) +
-    theme_classic(base_size = 12)
+    custom_theme
 @
 
 \vspace{0.25em}
@@ -1677,7 +1706,7 @@ Core references: Abadie \& Gardeazabal (2003), Abadie, Diamond \& Hainmueller (2
 \nocite{bertrand-et-al_2004, callaway-santanna_2021, goodman-bacon_2021, sun-abraham_2021}
 \nocite{green-kim-yoon_2001}
 \nocite{abadie-et-al_2010, abadie-gardeazabal_2003, card-krueger_1994}
-\bibliography{../assets/PLSC30600}
+\bibliography{\plscassetpath/PLSC30600}
 \end{frame}
 
 %-------------------------------------------------------------------------------%
